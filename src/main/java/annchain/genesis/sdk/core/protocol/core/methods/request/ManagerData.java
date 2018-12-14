@@ -1,6 +1,7 @@
 package annchain.genesis.sdk.core.protocol.core.methods.request;
 
-import com.alibaba.fastjson.JSON;
+import org.json.JSONObject;
+
 import java.util.Map;
 
 /**
@@ -22,6 +23,6 @@ public class ManagerData extends BaseRequest{
 
     @Override
     public String toString() {
-        return JSON.toJSONString(keyPairList);
+        return JSONObject.valueToString(keyPairList);
     }
 }

@@ -8,8 +8,6 @@ import annchain.genesis.sdk.core.protocol.core.methods.response.*;
 import annchain.genesis.sdk.crypto.AnRawTransaction;
 import annchain.genesis.sdk.abi.FunctionEncoder;
 import annchain.genesis.sdk.abi.datatypes.Function;
-import annchain.genesis.sdk.core.protocol.core.methods.request.*;
-import annchain.genesis.sdk.core.protocol.core.methods.response.*;
 import annchain.genesis.sdk.crypto.Credentials;
 import annchain.genesis.sdk.crypto.TransactionEncoder;
 import annchain.genesis.sdk.utils.utils.Numeric;
