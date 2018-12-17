@@ -4,11 +4,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.Date;
 
-/**
- * User: za-luguiming
- * Date: 2018/11/14
- * Time: 14:26
- */
 public class TransInfo{
 
     private String amount;

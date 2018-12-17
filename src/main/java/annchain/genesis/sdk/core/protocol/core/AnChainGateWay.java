@@ -29,14 +29,6 @@ public class AnChainGateWay implements Genereum {
         this.anChain= new JsonRpc2_0AnChain(anChainService);
     }
 
-    @Override
-    public GenClientVersion genClientVersion() throws Exception{
-        Request<GenClientVersion> request = anChain.call("gen_clientVersion",
-                GenClientVersion.class,
-                null);
-        return request.send();
-    }
-
 
     @Override
     public Result createAccount(CreateAccount createAccount, Credentials credentials) throws Exception{
@@ -86,10 +78,10 @@ public class AnChainGateWay implements Genereum {
     }
 
     @Override
-    public Result executeContract(ExecuteContractReq executeContractReq, Credentials credentials) throws Exception{
+    public Result executeContract(ContractTrans contractTrans, Credentials credentials) throws Exception{
         ExecuteContract executeContract = new ExecuteContract();
-        BeanUtils.copyProperties(executeContract,executeContractReq);
-        executeContract.setPayload(FunctionEncoder.encode(new Function(executeContractReq.getMethod_name(), executeContractReq.getInputArgs(), executeContractReq.getOutputArgs())));
+        BeanUtils.copyProperties(executeContract, contractTrans);
+        executeContract.setPayload(FunctionEncoder.encode(new Function(contractTrans.getMethod_name(), contractTrans.getInputArgs(), contractTrans.getOutputArgs())));
         AnRawTransaction anRawTransaction = getRawTransaction("execute_contract",executeContract.toString(),executeContract,credentials);
         Request<Result> call = anChain.call("execute_contract",
                 Result.class,
@@ -116,12 +108,12 @@ public class AnChainGateWay implements Genereum {
     }
 
     @Override
-    public LedgerPagerListResult queryLedgerPaper(PaginationReq paginationReq) throws Exception{
+    public LedgerPagerListResult queryLedgerPaper(Pagination pagination) throws Exception{
         Request<LedgerPagerListResult> call = anChain.call("query_ledgers",
                 LedgerPagerListResult.class,
-                paginationReq.getOrder(),
-                paginationReq.getLimit(),
-                paginationReq.getCursor());
+                pagination.getOrder(),
+                pagination.getLimit(),
+                pagination.getCursor());
         System.out.println(call.getParams());
         return call.send();
     }
@@ -135,17 +127,17 @@ public class AnChainGateWay implements Genereum {
     }
 
     @Override
-    public TransResultList queryAllTrans(PaginationReq paginationReq) throws Exception{
+    public TransResultList queryAllTrans(Pagination pagination) throws Exception{
         Request<TransResultList> call = anChain.call("query_payments",
                 TransResultList.class,
-                paginationReq.getOrder(),
-                paginationReq.getLimit(),
-                paginationReq.getCursor());
+                pagination.getOrder(),
+                pagination.getLimit(),
+                pagination.getCursor());
         return call.send();
     }
 
     @Override
-    public TransResultList queryTransByAccount(QueryTransReq queryTransReq) throws Exception{
+    public TransResultList queryTransByAccount(QueryTrans queryTransReq) throws Exception{
         Request<TransResultList> call = anChain.call("query_account_payments",
                 TransResultList.class,
                 queryTransReq.getAddress(),
@@ -164,12 +156,12 @@ public class AnChainGateWay implements Genereum {
     }
 
     @Override
-    public TradeResultList queryAllTrades(PaginationReq paginationReq) throws Exception{
+    public TradeResultList queryAllTrades(Pagination pagination) throws Exception{
         Request<TradeResultList> call = anChain.call("query_transactions",
                 TradeResultList.class,
-                paginationReq.getOrder(),
-                paginationReq.getLimit(),
-                paginationReq.getCursor());
+                pagination.getOrder(),
+                pagination.getLimit(),
+                pagination.getCursor());
         return call.send();
 
     }
@@ -183,7 +175,7 @@ public class AnChainGateWay implements Genereum {
     }
 
     @Override
-    public TradeResultList queryTradesByAccount(QueryTradesReq queryTradesReq) throws Exception{
+    public TradeResultList queryTradesByAccount(QueryTrades queryTradesReq) throws Exception{
         Request<TradeResultList> call = anChain.call("query_account_transactions",
                 TradeResultList.class,
                 queryTradesReq.getAddress(),
@@ -194,7 +186,7 @@ public class AnChainGateWay implements Genereum {
     }
 
     @Override
-    public TradeResultList queryLedgerTradesByHeight(QueryLedgerReq queryLedgerReq) throws Exception{
+    public TradeResultList queryLedgerTradesByHeight(QueryLedger queryLedgerReq) throws Exception{
         Request<TradeResultList> call = anChain.call("query_ledger_transactions",
                 TradeResultList.class,
                 queryLedgerReq.getHeight(),
@@ -205,13 +197,13 @@ public class AnChainGateWay implements Genereum {
     }
 
     @Override
-    public ContractResult queryContract(QueryContractReq queryContractReq, Credentials credentials) throws Exception {
+    public ContractResult queryContract(GetContractResult getContractResult, Credentials credentials) throws Exception {
         QueryContract queryContract = new QueryContract();
-        BeanUtils.copyProperties(queryContract,queryContractReq);
+        BeanUtils.copyProperties(queryContract, getContractResult);
         queryContract.setBasefee("0");
         queryContract.setMemo("");
         queryContract.setNonce("0");
-        queryContract.setPayload(FunctionEncoder.encode(new Function(queryContractReq.getMethod_name(), queryContractReq.getInputArgs(), queryContractReq.getOutputArgs())));
+        queryContract.setPayload(FunctionEncoder.encode(new Function(getContractResult.getMethod_name(), getContractResult.getInputArgs(), getContractResult.getOutputArgs())));
         AnRawTransaction anRawTransaction = getRawTransaction("query_contract",queryContract.toString(),queryContract,credentials);
         Request<ContractResult> call = anChain.call("query_contract",
                 ContractResult.class,
@@ -238,7 +230,7 @@ public class AnChainGateWay implements Genereum {
     }
 
     @Override
-    public Result<Map<String,Value>> queryManagerData(QueryTransReq queryData) throws Exception{
+    public Result<Map<String,Value>> queryManagerData(QueryTrans queryData) throws Exception{
         Request<Result<Map<String,Value>>> call = anChain.call("query_account_managedatas",
                 Result.class,
                 queryData.getAddress(),

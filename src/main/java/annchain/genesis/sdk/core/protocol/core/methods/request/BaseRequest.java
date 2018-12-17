@@ -1,10 +1,6 @@
 package annchain.genesis.sdk.core.protocol.core.methods.request;
 
-/**
- * User: za-luguiming
- * Date: 2018/11/21
- * Time: 18:39
- */
+
 public class BaseRequest {
     private String basefee;
     private String memo;

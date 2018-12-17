@@ -8,11 +8,6 @@ import org.apache.commons.lang3.StringUtils;
 
 import java.util.List;
 
-/**
- * User: za-luguiming
- * Date: 2018/11/23
- * Time: 15:26
- */
 public class ContractResult extends Response<String> {
 
     public List<Type> getContractResult(List<TypeReference<Type>> outputParams){

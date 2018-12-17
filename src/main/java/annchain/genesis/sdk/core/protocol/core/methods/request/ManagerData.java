@@ -4,11 +4,7 @@ import org.json.JSONObject;
 
 import java.util.Map;
 
-/**
- * User: za-luguiming
- * Date: 2018/11/13
- * Time: 18:14
- */
+
 public class ManagerData extends BaseRequest{
 
     private Map<String,Value> keyPairList;

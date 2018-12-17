@@ -4,11 +4,6 @@ import annchain.genesis.sdk.core.protocol.core.methods.request.Value;
 
 import java.util.Map;
 
-/**
- * User: za-luguiming
- * Date: 2018/11/14
- * Time: 10:03
- */
 public class AccountVo {
     private String address;
     private String balance;

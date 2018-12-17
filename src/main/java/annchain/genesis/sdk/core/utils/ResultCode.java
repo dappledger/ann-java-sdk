@@ -1,10 +1,6 @@
 package annchain.genesis.sdk.core.utils;
 
-/**
- * User: za-luguiming
- * Date: 2018/11/13
- * Time: 16:21
- */
+
 public class ResultCode {
 
     public static final int CodeType_OK = 0;

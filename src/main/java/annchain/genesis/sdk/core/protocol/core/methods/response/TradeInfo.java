@@ -6,11 +6,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Date;
 import java.util.Map;
 
-/**
- * User: za-luguiming
- * Date: 2018/11/14
- * Time: 15:16
- */
 public class TradeInfo {
     private String from;
     private String to;

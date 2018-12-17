@@ -6,11 +6,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.io.Serializable;
 import java.util.Date;
 
-/**
- * User: za-luguiming
- * Date: 2018/11/14
- * Time: 10:46
- */
 public class LedgerPaper{
     @JsonProperty("base_fee")
     private Integer baseFee;

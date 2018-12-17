@@ -4,11 +4,7 @@ import annchain.genesis.sdk.abi.datatypes.Type;
 
 import java.util.List;
 
-/**
- * User: za-luguiming
- * Date: 2018/11/22
- * Time: 13:36
- */
+
 public class CreateContract extends BaseRequest{
 
     private String contractCode;

@@ -28,11 +28,6 @@ public abstract class Service implements AnChainService {
         String payload = objectMapper.writeValueAsString(request);
         try (InputStream result = performIO(payload)) {
             if (result != null) {
-               /*byte[] bytes = new byte[0];
-                bytes = new byte[result.available()];
-                result.read(bytes);
-                String str = new String(bytes);
-                System.out.println(str);*/
                 T response = objectMapper.readValue(result, responseType);
                 return response;
             } else {

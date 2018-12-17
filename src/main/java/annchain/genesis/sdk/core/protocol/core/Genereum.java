@@ -2,8 +2,6 @@ package annchain.genesis.sdk.core.protocol.core;
 
 import annchain.genesis.sdk.core.protocol.core.methods.request.*;
 import annchain.genesis.sdk.core.protocol.core.methods.response.*;
-import annchain.genesis.sdk.core.protocol.core.methods.request.*;
-import annchain.genesis.sdk.core.protocol.core.methods.response.*;
 import annchain.genesis.sdk.crypto.Credentials;
 import java.util.Map;
 
@@ -11,8 +9,6 @@ import java.util.Map;
  * Core anChain JSON-RPC API.
  */
 public interface Genereum {
-
-    GenClientVersion genClientVersion() throws Exception;
 
     /**
      * 创建账户
@@ -44,10 +40,10 @@ public interface Genereum {
 
     /**
      * 执行合约
-     * @param executeContractReq
+     * @param contractTrans
      * @return
      */
-    Result executeContract(ExecuteContractReq executeContractReq,Credentials credentials) throws Exception;
+    Result executeContract(ContractTrans contractTrans, Credentials credentials) throws Exception;
 
     /**
      * 获取nonce
@@ -64,10 +60,10 @@ public interface Genereum {
 
     /**
      * 查询所有账页信息
-     * @param paginationReq
+     * @param pagination
      * @return
      */
-    LedgerPagerListResult queryLedgerPaper(PaginationReq paginationReq) throws Exception;
+    LedgerPagerListResult queryLedgerPaper(Pagination pagination) throws Exception;
 
     /**
      * 查询指定账页信息
@@ -78,17 +74,17 @@ public interface Genereum {
 
     /**
      * 查询所有转账
-     * @param paginationReq
+     * @param pagination
      * @return
      */
-    TransResultList queryAllTrans(PaginationReq paginationReq) throws Exception;
+    TransResultList queryAllTrans(Pagination pagination) throws Exception;
 
     /**
      * 查询指定账户转账
      * @param queryTransReq
      * @return
      */
-    TransResultList queryTransByAccount(QueryTransReq queryTransReq) throws Exception;
+    TransResultList queryTransByAccount(QueryTrans queryTransReq) throws Exception;
 
     /**
      * 查询指定交易转账
@@ -99,10 +95,10 @@ public interface Genereum {
 
     /**
      * 查询所有交易信息
-     * @param paginationReq
+     * @param pagination
      * @return
      */
-    TradeResultList queryAllTrades(PaginationReq paginationReq) throws Exception;
+    TradeResultList queryAllTrades(Pagination pagination) throws Exception;
 
     /**
      * 查询指定交易信息
@@ -115,19 +111,19 @@ public interface Genereum {
      * 查询指定账户交易信息接口
      * @return
      */
-    TradeResultList queryTradesByAccount(QueryTradesReq queryTradesReq) throws Exception;
+    TradeResultList queryTradesByAccount(QueryTrades queryTradesReq) throws Exception;
 
     /**
      * 查询指定账页交易信息接口
      * @return
      */
-    TradeResultList queryLedgerTradesByHeight(QueryLedgerReq queryLedgerReq) throws Exception;
+    TradeResultList queryLedgerTradesByHeight(QueryLedger queryLedgerReq) throws Exception;
     /**
      * 查询合约
-     * @param queryContractReq
+     * @param getContractResult
      * @return
      */
-    ContractResult queryContract(QueryContractReq queryContractReq, Credentials credentials) throws Exception;
+    ContractResult queryContract(GetContractResult getContractResult, Credentials credentials) throws Exception;
 
     /**
      * 查询合约是否存在
@@ -148,7 +144,7 @@ public interface Genereum {
      * @param queryData
      * @return
      */
-    Result<Map<String,Value>> queryManagerData(QueryTransReq queryData) throws Exception;
+    Result<Map<String,Value>> queryManagerData(QueryTrans queryData) throws Exception;
 
     /**
      * 根据Key查询指定账户数据实体
