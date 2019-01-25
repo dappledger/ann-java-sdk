@@ -10,6 +10,7 @@ import annchain.genesis.sdk.abi.FunctionEncoder;
 import annchain.genesis.sdk.abi.datatypes.Function;
 import annchain.genesis.sdk.crypto.Credentials;
 import annchain.genesis.sdk.crypto.TransactionEncoder;
+import annchain.genesis.sdk.utils.utils.EventUtils;
 import annchain.genesis.sdk.utils.utils.Numeric;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.collections.CollectionUtils;
@@ -78,7 +79,7 @@ public class AnChainGateWay implements Genereum {
     }
 
     @Override
-    public Result executeContract(ContractTrans contractTrans, Credentials credentials) throws Exception{
+    public Result executeContract(ContractTrans contractTrans, Credentials credentials,EventCallBack eventCallBack) throws Exception{
         ExecuteContract executeContract = new ExecuteContract();
         BeanUtils.copyProperties(executeContract, contractTrans);
         executeContract.setPayload(FunctionEncoder.encode(new Function(contractTrans.getMethod_name(), contractTrans.getInputArgs(), contractTrans.getOutputArgs())));
@@ -88,6 +89,9 @@ public class AnChainGateWay implements Genereum {
                 anRawTransaction.getRawTransaction());
         Result result = call.send();
         result.setTxHash(anRawTransaction.getTxHash());
+        if(eventCallBack != null && CollectionUtils.isNotEmpty(eventCallBack.getEvents())) {
+            EventUtils.eventCall(anChain, new EventTask(result.getTxHash(), anChain, eventCallBack));
+        }
         return result;
     }
 

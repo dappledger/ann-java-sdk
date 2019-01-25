@@ -1,8 +1,6 @@
 package annchain.genesis.sdk.abi;
 
 import annchain.genesis.sdk.abi.datatypes.*;
-import annchain.genesis.sdk.abi.datatypes.*;
-
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.ParameterizedType;
@@ -84,7 +82,7 @@ public class Utils {
     }
 
     @SuppressWarnings("unchecked")
-    public static List<TypeReference<Type>> convert(List<TypeReference<?>> input) {
+    public static List<TypeReference<Type>> convert(List<TypeReference<Type>> input) {
         List<TypeReference<Type>> result = new ArrayList<>(input.size());
         result.addAll(input.stream()
                 .map(typeReference -> (TypeReference<Type>) typeReference)

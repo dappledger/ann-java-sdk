@@ -43,7 +43,7 @@ public interface Genereum {
      * @param contractTrans
      * @return
      */
-    Result executeContract(ContractTrans contractTrans, Credentials credentials) throws Exception;
+    Result executeContract(ContractTrans contractTrans, Credentials credentials,EventCallBack eventCallBack) throws Exception;
 
     /**
      * 获取nonce

@@ -10,7 +10,7 @@ import java.util.List;
 public class GetContractResult extends BaseRequest{
     private String method_name;
     private List<Type> inputArgs;
-    private List<TypeReference<?>> outputArgs = new ArrayList<>();
+    private List<TypeReference<Type>> outputArgs = new ArrayList<>();
 
     public String getMethod_name() {
         return method_name;
@@ -28,11 +28,11 @@ public class GetContractResult extends BaseRequest{
         this.inputArgs = inputArgs;
     }
 
-    public List<TypeReference<?>> getOutputArgs() {
+    public List<TypeReference<Type>> getOutputArgs() {
         return outputArgs;
     }
 
-    public void setOutputArgs(List<TypeReference<?>> outputArgs) {
+    public void setOutputArgs(List<TypeReference<Type>> outputArgs) {
         this.outputArgs = outputArgs;
     }
 }

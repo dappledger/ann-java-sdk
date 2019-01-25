@@ -30,7 +30,7 @@ public class JsonRpc2_0AnChain<T extends Response> implements AnChain<T> {
     }
 
     @Override
-    public Request<T> call(String methodName,Class<T> type,Object... rawTransaction) {
+    public Request<T> call(String methodName, Class<T> type, Object... rawTransaction) {
         return new Request(
                 methodName,
                 rawTransaction!=null?Arrays.asList(rawTransaction):Collections.emptyList(),
