@@ -94,7 +94,6 @@ public void testManagerData(){
     managerData.setFrom(credentials.getAddress());
     managerData.setNonce("1");
     managerData.setMemo("memo");
-    managerData.setTo("0x65188459a1dc65984a0c7d4a397ed3986ed0c853");
     Result result = anChainGateWay.managerData(managerData,credentials);
     Assert.assertNull(result.getError().getCode());
     Assert.assertNotNull(result.getTxHash());
