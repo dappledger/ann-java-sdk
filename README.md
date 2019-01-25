@@ -347,7 +347,25 @@ public void  executeContractTest(){
     contractTrans.setTo("0x3c3be41333d48c72b8ad7d0c02bb188faaec3815");
     contractTrans.setMemo("");
     contractTrans.setNonce("8");
-    Result result =  anChainGateWay.executeContract(contractTrans,credentials);
+    Result result =  anChainGateWay.executeContract(contractTrans,credentials,null);
+    /*****************event if exists ***********************************/
+    EventCallBack eventCallBack = new EventCallBack() {
+            @Override
+            public void eventCall(String eventName, List<Type> values) {
+                System.out.println("### bussiness code ############eventName= "+eventName + "values[0]="+values.get(0).getValue());
+            }
+        };
+    List<TypeReference<Type>> eventType = new ArrayList<>();
+    TypeReference output2 = new TypeReference<Address>() {};
+    TypeReference output3 = new TypeReference<Address>() {};
+    TypeReference output4 = new TypeReference<Utf8String>() {};
+    eventType.add(output2);
+    eventType.add(output3);
+    eventType.add(output4);
+    EventCallBack.EventVo eventVo = eventCallBack.new EventVo("Deposit",eventType);
+    eventCallBack.setEvents(Arrays.asList(eventVo));
+    /*****************event if exists ***********************************/
+    Result result =  anChainGateWay.executeContract(contractTrans,credentials,eventCallBack);
     Assert.assertNotNull(result.getTxHash());
     Assert.assertNull(result.getError().getCode());
 }
