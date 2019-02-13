@@ -161,4 +161,12 @@ public interface Genereum {
      * @return
      */
     Result<Map<String,Value>> queryManagerDataByCategory(String address,String category) throws Exception;
+
+    /**
+     * 节点升验证节点/降级普通节点
+     * @param nodeUpdate
+     * @return
+     * @throws Exception
+     */
+    Result updateNodeV(NodeUpdate nodeUpdate) throws Exception;
 }

@@ -260,6 +260,12 @@ public class AnChainGateWay implements Genereum {
         return call.send();
     }
 
+    @Override
+    public Result updateNodeV(NodeUpdate nodeUpdate) throws Exception {
+        Request<Result> call = anChain.call("request_special_op",Result.class,getNodeTransaction(nodeUpdate));
+        return call.send();
+    }
+
 
     /**
      * get raw transaction
@@ -280,6 +286,9 @@ public class AnChainGateWay implements Genereum {
         return anRawTransaction;
     }
 
+    private String getNodeTransaction(NodeUpdate nodeUpdate) throws Exception{
+        return Numeric.toHexString(TransactionEncoder.encode(nodeUpdate));
+    }
     /**
      *  encode constructor
      * @param types

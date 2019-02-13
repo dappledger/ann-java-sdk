@@ -11,7 +11,7 @@ public class Request<T extends Response> {
     private static AtomicLong nextId = new AtomicLong(0);
     private String jsonrpc = "2.0";
     private String method;
-    private List<MethodRequest> params;
+    private List params;
     private Long id;
     private AnChainService anChainService;
 
@@ -22,7 +22,7 @@ public class Request<T extends Response> {
     public Request() {
     }
 
-    public Request(String method,List<MethodRequest> params,
+    public Request(String method,List params,
                    AnChainService anChainService, Class<T> type) {
         this.method = method;
         this.params = params;
@@ -31,11 +31,11 @@ public class Request<T extends Response> {
         this.responseType = type;
     }
 
-    public List<MethodRequest> getParams() {
+    public List getParams() {
         return params;
     }
 
-    public void setParams(List<MethodRequest> params) {
+    public void setParams(List params) {
         this.params = params;
     }
 
@@ -67,93 +67,4 @@ public class Request<T extends Response> {
         return new RemoteCall<>(this::send).observable();
     }
 
-    public static class MethodRequest{
-        private String basefee;
-        private String memo;
-        private String from;
-        private String to;
-        private String nonce;
-        private String optype;
-        private String operation;
-        private String signature;
-
-        public MethodRequest() {
-
-        }
-
-        public MethodRequest(String basefee, String memo, String from, String to, String nonce, String optype, String operation, String signature) {
-            this.basefee = basefee;
-            this.memo = memo;
-            this.from = from;
-            this.to = to;
-            this.nonce = nonce;
-            this.optype = optype;
-            this.operation = operation;
-            this.signature = signature;
-        }
-
-        public String getBasefee() {
-            return basefee;
-        }
-
-        public void setBasefee(String basefee) {
-            this.basefee = basefee;
-        }
-
-        public String getMemo() {
-            return memo;
-        }
-
-        public void setMemo(String memo) {
-            this.memo = memo;
-        }
-
-        public String getFrom() {
-            return from;
-        }
-
-        public void setFrom(String from) {
-            this.from = from;
-        }
-
-        public String getTo() {
-            return to;
-        }
-
-        public void setTo(String to) {
-            this.to = to;
-        }
-
-        public String getNonce() {
-            return nonce;
-        }
-
-        public void setNonce(String nonce) {
-            this.nonce = nonce;
-        }
-
-        public String getOptype() {
-            return optype;
-        }
-
-        public void setOptype(String optype) {
-            this.optype = optype;
-        }
-
-        public String getOperation() {
-            return operation;
-        }
-
-        public void setOperation(String operation) {
-            this.operation = operation;
-        }
-
-        public String getSignature() {
-            return signature;
-        }
-
-        public void setSignature(String signature) {
-            this.signature = signature;
-        }
-    }
 }
