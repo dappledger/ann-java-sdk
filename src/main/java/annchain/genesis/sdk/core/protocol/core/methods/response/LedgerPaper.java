@@ -10,7 +10,7 @@ public class LedgerPaper{
     @JsonProperty("base_fee")
     private Integer baseFee;
     @JsonProperty("closed_at")
-    private Date closedAt;
+    private String closedAt;
     private String hash;
     @JsonProperty("max_tx_set_size")
     private Integer maxTxSetSize;
@@ -30,11 +30,11 @@ public class LedgerPaper{
         this.baseFee = baseFee;
     }
 
-    public Date getClosedAt() {
+    public String getClosedAt() {
         return closedAt;
     }
 
-    public void setClosedAt(Date closedAt) {
+    public void setClosedAt(String closedAt) {
         this.closedAt = closedAt;
     }
 

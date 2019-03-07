@@ -30,7 +30,7 @@ public class ContractReceipt{
     @JsonProperty("gas_used")
     private String gasUsed;
     @JsonProperty("created_at")
-    private Date createdAt;
+    private String createdAt;
     private List<EventLog> logs;
 
     public String getOptype() {
@@ -143,11 +143,11 @@ public class ContractReceipt{
         this.gasUsed = gasUsed;
     }
 
-    public Date getCreatedAt() {
+    public String getCreatedAt() {
         return createdAt;
     }
 
-    public void setCreatedAt(Date createdAt) {
+    public void setCreatedAt(String createdAt) {
         this.createdAt = createdAt;
     }
 

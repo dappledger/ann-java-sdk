@@ -10,7 +10,7 @@ public class TradeInfo {
     private String from;
     private String to;
     @JsonProperty("created_at")
-    private Date createdAt;
+    private String createdAt;
     private String hash;
     private String optype;
     private Long basefee;
@@ -127,11 +127,11 @@ public class TradeInfo {
         this.starting_balance = starting_balance;
     }
 
-    public Date getCreatedAt() {
+    public String getCreatedAt() {
         return createdAt;
     }
 
-    public void setCreatedAt(Date createdAt) {
+    public void setCreatedAt(String createdAt) {
         this.createdAt = createdAt;
     }
 

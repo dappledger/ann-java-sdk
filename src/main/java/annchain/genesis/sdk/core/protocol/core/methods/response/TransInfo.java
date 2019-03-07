@@ -8,7 +8,7 @@ public class TransInfo{
 
     private String amount;
     @JsonProperty("created_at")
-    private Date createdAt;
+    private String createdAt;
     private Long basefee;
     private String from;
     private String hash;
@@ -102,11 +102,11 @@ public class TransInfo{
         this.memo = memo;
     }
 
-    public Date getCreatedAt() {
+    public String getCreatedAt() {
         return createdAt;
     }
 
-    public void setCreatedAt(Date createdAt) {
+    public void setCreatedAt(String createdAt) {
         this.createdAt = createdAt;
     }
 
