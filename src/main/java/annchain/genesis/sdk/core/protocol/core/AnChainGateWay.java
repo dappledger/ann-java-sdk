@@ -131,46 +131,6 @@ public class AnChainGateWay implements Genereum {
     }
 
     @Override
-    public TransResultList queryAllTrans(Pagination pagination) throws Exception{
-        Request<TransResultList> call = anChain.call("query_payments",
-                TransResultList.class,
-                pagination.getOrder(),
-                pagination.getLimit(),
-                pagination.getCursor());
-        return call.send();
-    }
-
-    @Override
-    public TransResultList queryTransByAccount(QueryTrans queryTransReq) throws Exception{
-        Request<TransResultList> call = anChain.call("query_account_payments",
-                TransResultList.class,
-                queryTransReq.getAddress(),
-                queryTransReq.getOrder(),
-                queryTransReq.getLimit(),
-                queryTransReq.getCursor());
-        return call.send();
-    }
-
-    @Override
-    public TransResult queryTransByTxHash(String txHash) throws Exception{
-        Request<TransResult> call = anChain.call("query_payment",
-                TransResult.class,
-                txHash);
-        return call.send();
-    }
-
-    @Override
-    public TradeResultList queryAllTrades(Pagination pagination) throws Exception{
-        Request<TradeResultList> call = anChain.call("query_transactions",
-                TradeResultList.class,
-                pagination.getOrder(),
-                pagination.getLimit(),
-                pagination.getCursor());
-        return call.send();
-
-    }
-
-    @Override
     public TradeResult queryTradesByTxHash(String txHash) throws Exception{
         Request<TradeResult> call = anChain.call("query_transaction",
                 TradeResult.class,
@@ -179,24 +139,15 @@ public class AnChainGateWay implements Genereum {
     }
 
     @Override
-    public TradeResultList queryTradesByAccount(QueryTrades queryTradesReq) throws Exception{
-        Request<TradeResultList> call = anChain.call("query_account_transactions",
-                TradeResultList.class,
-                queryTradesReq.getAddress(),
-                queryTradesReq.getOrder(),
-                queryTradesReq.getLimit(),
-                queryTradesReq.getCursor());
-        return call.send();
+    public TradeResultList queryTradesByAccount(QueryTrades queryTradesReq) throws Exception {
+        return null;
     }
 
     @Override
     public TradeResultList queryLedgerTradesByHeight(QueryLedger queryLedgerReq) throws Exception{
         Request<TradeResultList> call = anChain.call("query_ledger_transactions",
                 TradeResultList.class,
-                queryLedgerReq.getHeight(),
-                queryLedgerReq.getOrder(),
-                queryLedgerReq.getLimit(),
-                queryLedgerReq.getCursor());
+                queryLedgerReq.getHeight());
         return call.send();
     }
 
