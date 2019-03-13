@@ -80,12 +80,6 @@ public interface Genereum {
     TradeResult queryTradesByTxHash(String txHash) throws Exception;
 
     /**
-     * 查询指定账户交易信息接口
-     * @return
-     */
-    TradeResultList queryTradesByAccount(QueryTrades queryTradesReq) throws Exception;
-
-    /**
      * 查询指定账页交易信息接口
      * @return
      */
