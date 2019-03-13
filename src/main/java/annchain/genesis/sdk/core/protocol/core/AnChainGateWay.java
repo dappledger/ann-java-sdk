@@ -139,6 +139,11 @@ public class AnChainGateWay implements Genereum {
     }
 
     @Override
+    public TradeResultList queryTradesByAccount(QueryTrades queryTradesReq) throws Exception {
+        return null;
+    }
+
+    @Override
     public TradeResultList queryLedgerTradesByHeight(QueryLedger queryLedgerReq) throws Exception{
         Request<TradeResultList> call = anChain.call("query_ledger_transactions",
                 TradeResultList.class,
