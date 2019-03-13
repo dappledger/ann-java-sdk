@@ -73,6 +73,34 @@ public interface Genereum {
     LedgerPagerResult queryLedgerBySequence(Long height) throws Exception;
 
     /**
+     * 查询所有转账
+     * @param pagination
+     * @return
+     */
+    TransResultList queryAllTrans(Pagination pagination) throws Exception;
+
+    /**
+     * 查询指定账户转账
+     * @param queryTransReq
+     * @return
+     */
+    TransResultList queryTransByAccount(QueryTrans queryTransReq) throws Exception;
+
+    /**
+     * 查询指定交易转账
+     * @param txHash
+     * @return
+     */
+    TransResult queryTransByTxHash(String txHash) throws Exception;
+
+    /**
+     * 查询所有交易信息
+     * @param pagination
+     * @return
+     */
+    TradeResultList queryAllTrades(Pagination pagination) throws Exception;
+
+    /**
      * 查询指定交易信息
      * @param txHash
      * @return
