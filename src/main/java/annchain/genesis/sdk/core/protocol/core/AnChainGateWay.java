@@ -14,6 +14,8 @@ import annchain.genesis.sdk.utils.utils.EventUtils;
 import annchain.genesis.sdk.utils.utils.Numeric;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections.MapUtils;
+
 import java.util.List;
 import java.util.Map;
 
@@ -89,7 +91,7 @@ public class AnChainGateWay implements Genereum {
                 anRawTransaction.getRawTransaction());
         Result result = call.send();
         result.setTxHash(anRawTransaction.getTxHash());
-        if(eventCallBack != null && CollectionUtils.isNotEmpty(eventCallBack.getEvents())) {
+        if(eventCallBack != null && MapUtils.isNotEmpty((eventCallBack.getEvents()))) {
             EventUtils.eventCall(anChain, new EventTask(result.getTxHash(), anChain, eventCallBack));
         }
         return result;
