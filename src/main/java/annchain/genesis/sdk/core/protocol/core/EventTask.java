@@ -9,9 +9,9 @@ import annchain.genesis.sdk.core.protocol.core.methods.response.ContractReceipt;
 import annchain.genesis.sdk.core.protocol.core.methods.response.ContractReceiptResult;
 import annchain.genesis.sdk.core.protocol.core.methods.response.EventLog;
 import org.apache.commons.collections.CollectionUtils;
-
-import java.util.Iterator;
+import org.apache.commons.collections.MapUtils;
 import java.util.List;
+import java.util.Map;
 
 public class EventTask implements Runnable{
     private AnChain chain;
@@ -53,8 +53,8 @@ public class EventTask implements Runnable{
     @Override
     public void run() {
         long end = System.currentTimeMillis() + DEFAULT_WAITE * 1000;
-        List<EventCallBack.EventVo> eventVoList = eventCallBack.getEvents();
-        if(CollectionUtils.isEmpty(eventVoList)){
+        Map<String,EventCallBack.EventVo> eventVoList = eventCallBack.getEvents();
+        if(MapUtils.isEmpty(eventVoList)){
             return;
         }
         while (System.currentTimeMillis() < end) {
@@ -71,13 +71,10 @@ public class EventTask implements Runnable{
                         continue;
                     }
                     for (EventLog eventLog : eventLogs){
-                        Iterator<EventCallBack.EventVo> eventVos = eventVoList.iterator();
-                        while (eventVos.hasNext()){
-                            EventCallBack.EventVo eventVo = eventVos.next();
-                            if(eventLog.getTopics().contains(eventVo.getTopic())){
-                                List<Type> types = FunctionReturnDecoder.decode(eventLog.getData(),eventVo.getTypes());
-                                eventCallBack.eventCall(eventVo.getEventName(),types);
-                            }
+                        EventCallBack.EventVo eventVo = eventVoList.get(eventLog.getTopics().get(0));
+                        if(eventVo != null){
+                            List<Type> types = FunctionReturnDecoder.decode(eventLog.getData(),eventVo.getTypes());
+                            eventCallBack.eventCall(eventVo.getEventName(),types);
                         }
                     }
                     return;
