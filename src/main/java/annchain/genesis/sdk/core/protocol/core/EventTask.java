@@ -70,8 +70,8 @@ public class EventTask implements Runnable{
                     if(CollectionUtils.isEmpty(eventLogs)){
                         continue;
                     }
-                    Iterator<EventCallBack.EventVo> eventVos = eventVoList.iterator();
                     for (EventLog eventLog : eventLogs){
+                        Iterator<EventCallBack.EventVo> eventVos = eventVoList.iterator();
                         while (eventVos.hasNext()){
                             EventCallBack.EventVo eventVo = eventVos.next();
                             if(eventLog.getTopics().contains(eventVo.getTopic())){

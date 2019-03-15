@@ -49,7 +49,7 @@ public abstract class EventCallBack implements CallBack {
        }
 
        public String getTopic() {
-           Event event = new Event("Deposit", types, Arrays.asList());
+           Event event = new Event(eventName, types, Arrays.asList());
            return EventEncoder.encode(event);
        }
 
