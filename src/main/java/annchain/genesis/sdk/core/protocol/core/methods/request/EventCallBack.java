@@ -21,7 +21,7 @@ public abstract class EventCallBack implements CallBack {
         return events;
     }
 
-    public void setEvents(EventVo eventVo) {
+    public void addEvents(EventVo eventVo) {
         this.events.put(eventVo.getTopic(),eventVo);
     }
 
