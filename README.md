@@ -363,7 +363,7 @@ public void  executeContractTest(){
     eventType.add(output3);
     eventType.add(output4);
     EventCallBack.EventVo eventVo = eventCallBack.new EventVo("Deposit",eventType);
-    eventCallBack.setEvents(Arrays.asList(eventVo));
+    eventCallBack.addEvents(eventVo);
     /*****************event if exists ***********************************/
     Result result =  anChainGateWay.executeContract(contractTrans,credentials,eventCallBack);
     Assert.assertNotNull(result.getTxHash());
