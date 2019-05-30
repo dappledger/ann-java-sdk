@@ -3,7 +3,7 @@
 
 ## 准备
 编译solidity合约请自行完成<br/>
-(可以通过https://remix.ethereum.org/在线编译或使用solc本地编译<br/>
+(可以通过 https://remix.ethereum.org/ 在线编译或使用solc本地编译<br/>
 生成byteCode)
 + 编译 test.sol
 ``` shell
