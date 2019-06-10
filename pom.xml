@@ -6,7 +6,10 @@
 
     <groupId>com.za.rendez.sdk</groupId>
     <artifactId>sdk</artifactId>
-    <version>0.1.5-SNAPSHOT</version>
+    <version>1.2.0-SNAPSHOT</version>
+    <properties>
+        <web3j.version>4.2.0</web3j.version>
+    </properties>
     <distributionManagement>
         <repository>
             <id>releases</id>
@@ -41,7 +44,7 @@
         <dependency>
             <groupId>org.web3j</groupId>
             <artifactId>core</artifactId>
-            <version>3.4.0</version>
+            <version>${web3j.version}</version>
         </dependency>
 
         <dependency>
@@ -60,7 +63,7 @@
         <dependency>
             <groupId>org.web3j</groupId>
             <artifactId>crypto</artifactId>
-            <version>3.4.0</version>
+            <version>${web3j.version}</version>
         </dependency>
 
         <dependency>
@@ -129,7 +132,7 @@
         <dependency>
             <groupId>org.web3j</groupId>
             <artifactId>rlp</artifactId>
-            <version>3.4.0</version>
+            <version>${web3j.version}</version>
         </dependency>
 
         <dependency>
@@ -148,7 +151,22 @@
             <artifactId>core</artifactId>
             <version>1.58.0.0</version>
         </dependency>
-
+        <!-- https://mvnrepository.com/artifact/org.apache.commons/commons-collections4 -->
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-collections4</artifactId>
+            <version>4.2</version>
+        </dependency>
+        <dependency>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bcprov-jdk15on</artifactId>
+            <version>1.60</version>
+        </dependency>
+        <dependency>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bcpkix-jdk15on</artifactId>
+            <version>1.60</version>
+        </dependency>
     </dependencies>
 
     <build>

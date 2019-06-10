@@ -35,7 +35,6 @@ public class TransactionReceipt {
     private String error = "";
 
 
-    private Long height;
 
     /* Tx Receipt in encoded form */
     private byte[] rlpEncoded;
@@ -54,14 +53,12 @@ public class TransactionReceipt {
         RLPItem result = (RLPItem) receipt.get(3);
         RLPList logs = (RLPList) receipt.get(5);
         RLPItem gasUsedRLP = (RLPItem) receipt.get(6);
-        RLPItem heightRLP = (RLPItem) receipt.get(7);
 
         postTxState = nullToEmpty(postTxStateRLP.getRLPData());
         cumulativeGas = cumulativeGasRLP.getRLPData();
         bloomFilter = new Bloom(bloomRLP.getRLPData());
         gasUsed = gasUsedRLP.getRLPData();
         executionResult = (executionResult = result.getRLPData()) == null ? EMPTY_BYTE_ARRAY : executionResult;
-        height = RendezUtil.BytesToLong(heightRLP.getRLPData());
         for (RLPElement log : logs) {
             LogInfo logInfo = new LogInfo(log.getRLPData());
             logInfoList.add(logInfo);
@@ -237,13 +234,6 @@ public class TransactionReceipt {
     }
 
 
-    public Long getHeight() {
-        return height;
-    }
-
-    public void setHeight(Long height) {
-        this.height = height;
-    }
 
     @Override
     public String toString() {
@@ -258,7 +248,6 @@ public class TransactionReceipt {
                 "\n  , executionResult=" + Hex.toHexString(executionResult) +
                 "\n  , bloom=" + bloomFilter.toString() +
                 "\n  , logs=" + logInfoList +
-                "\n  , height=" + height +
                 ']';
     }
 

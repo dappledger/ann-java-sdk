@@ -1,0 +1,12 @@
+package com.rendez.api.crypto;
+
+
+public interface PrivateKey {
+
+    byte[] toBytes();
+    Signature sign(byte[] msg);
+    PublicKey getPubKey();
+    String toHexString();
+    String getCryptoType();
+    String getAddress();
+}

@@ -1,12 +1,12 @@
 package com.rendez.api;
 
 
-import com.google.protobuf.ByteString;
 import com.rendez.api.bean.exception.BaseException;
 import com.rendez.api.bean.exception.ErrCode;
 import com.rendez.api.bean.model.DeployContractResult;
 import com.rendez.api.bean.rendez.*;
-import ikhofi.Message;
+import com.rendez.api.crypto.PrivateKey;
+import com.rendez.api.crypto.Signature;
 import io.reactivex.schedulers.Schedulers;
 import io.reactivex.subjects.PublishSubject;
 import io.reactivex.subjects.Subject;
@@ -27,10 +27,8 @@ import retrofit2.Response;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.math.BigInteger;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -126,13 +124,13 @@ public class NodeSrv {
      * @param nonce
      * @param contractAddress 合约地址
      * @param function  合约方法
-     * @param credential 秘钥
+     * @param privateKey 秘钥
      * @return
      * @throws IOException
      */
-    public List<Type> queryContract(BigInteger nonce, String contractAddress, Function function, Credentials credential) throws IOException {
+    public List<Type> queryContract(BigInteger nonce, String contractAddress, Function function, PrivateKey privateKey) throws IOException{
         RawTransaction tx = TransactionUtil.createCallContractTransaction(nonce, contractAddress, function);
-        Sign.SignatureData sig = CryptoUtil.generateSignature(tx, credential);
+        Signature sig = CryptoUtil.generateSignature(tx, privateKey);
         return queryContractWithSig(nonce, contractAddress, function, sig);
     }
 
@@ -145,7 +143,7 @@ public class NodeSrv {
      * @return
      * @throws IOException
      */
-    public List<Type> queryContractWithSig(BigInteger nonce, String contractAddress, Function function, Sign.SignatureData sig) throws IOException {
+    public List<Type> queryContractWithSig(BigInteger nonce, String contractAddress, Function function, Signature sig) throws IOException {
         RawTransaction tx = TransactionUtil.createCallContractTransaction(nonce, contractAddress, function);
         byte[] message = TransactionUtil.encodeWithSig(tx, sig);
         log.debug("raw tx:{}", Numeric.toHexString(message));
@@ -170,18 +168,18 @@ public class NodeSrv {
      * @param nonce
      * @param contractAddress  合约地址
      * @param function 合约函数定义
-     * @param credential
+     * @param privateKey
      * @return 交易hash
      * @throws IOException
      */
-    public String callContractEvm(BigInteger nonce, String contractAddress, Function function, Credentials credential) throws IOException {
-        return callContractEvm(nonce, contractAddress, function, credential, null);
+    public String callContractEvm(BigInteger nonce, String contractAddress, Function function, PrivateKey privateKey) throws IOException {
+        return callContractEvm(nonce, contractAddress, function, privateKey, null);
     }
 
 
-    public String callContractEvm(BigInteger nonce, String contractAddress, Function function, Credentials credential, EventCallBack callBack) throws IOException {
+    public String callContractEvm(BigInteger nonce, String contractAddress, Function function, PrivateKey privateKey, EventCallBack callBack) throws IOException {
         // default call sync
-        return callContractEvm(nonce, contractAddress, function, credential, callBack, true);
+        return callContractEvm(nonce, contractAddress, function, privateKey, callBack, true);
     }
 
     /**
@@ -191,20 +189,20 @@ public class NodeSrv {
      * @param nonce nonce
      * @param contractAddress 合约地址
      * @param function 函数定义
-     * @param credential 秘钥
+     * @param privateKey 秘钥
      * @param callBack 回调函数
      * @param isSyncCall 是否同步调用
      * @return txHash 交易哈希
      * @throws IOException
      */
-    public String callContractEvm(BigInteger nonce, String contractAddress, Function function, Credentials credential, EventCallBack callBack, boolean isSyncCall) throws IOException {
+    public String callContractEvm(BigInteger nonce, String contractAddress, Function function, PrivateKey privateKey, EventCallBack callBack, boolean isSyncCall) throws IOException{
         RawTransaction tx = TransactionUtil.createCallContractTransaction(nonce, contractAddress, function);
-        Sign.SignatureData sig = CryptoUtil.generateSignature(tx, credential);
+        Signature sig = CryptoUtil.generateSignature(tx, privateKey);
         return callContractEvmWithSig(nonce, contractAddress, function, sig, callBack, isSyncCall);
     }
 
 
-    public String callContractEvmWithSig(BigInteger nonce, String contractAddress, Function function, Sign.SignatureData sig, EventCallBack callBack) throws IOException {
+    public String callContractEvmWithSig(BigInteger nonce, String contractAddress, Function function, Signature sig, EventCallBack callBack) throws IOException {
         // default call sync
         return callContractEvmWithSig(nonce, contractAddress, function, sig, callBack, true);
     }
@@ -222,7 +220,7 @@ public class NodeSrv {
      * @return txHash 交易哈希
      * @throws IOException
      */
-    public String callContractEvmWithSig(BigInteger nonce, String contractAddress, Function function, Sign.SignatureData sig, EventCallBack callBack, boolean isSyncCall) throws IOException {
+    public String callContractEvmWithSig(BigInteger nonce, String contractAddress, Function function, Signature sig, EventCallBack callBack, boolean isSyncCall) throws IOException {
         RawTransaction tx = TransactionUtil.createCallContractTransaction(nonce, contractAddress, function);
         byte[] message = TransactionUtil.encodeWithSig(tx, sig);
         String txHash = sendTxToNode(message, isSyncCall, callBack);
@@ -254,84 +252,8 @@ public class NodeSrv {
         return txHash;
     }
 
-    /**
-     * 交易批量上链, 最大500笔
-     * @param txs
-     * @return
-     * @throws IOException
-     */
-    public List<String> batchCallContractEvm(List<byte[]> txs) throws IOException {
-        if (txs.size() > RendezUtil.MAX_BATCH_SIZE){
-            throw new BaseException("max allow batch size: " + RendezUtil.MAX_BATCH_SIZE);
-        }
-        List<String> txHashes = new LinkedList<>();
-        ByteArrayOutputStream output = new ByteArrayOutputStream();
 
-        output.write(RendezUtil.BATCH_TAG_PREFIX);
-        output.write(RendezUtil.ToInt32Bytes(txs.size()));
-        for (byte[] tx: txs) {
-            RendezUtil.writeToStream(output, tx);
-        }
-        String txhashConcat = sendTxToNode(output.toByteArray(), true, null);
-        // 服务端返回的交易哈希是每单笔交易哈希的串联
-        int avgTxhashLength = txhashConcat.length()/txs.size();
-        for (int i=0;i<txhashConcat.length();i+=avgTxhashLength){
-            // 从txhashConcat生成每单笔交易哈希
-            String txHash = txhashConcat.substring(i, i+avgTxhashLength);
-            txHashes.add("0x" + txHash);
-        }
-        return txHashes;
-    }
 
-    /**
-     * 调用jvm 合约
-     *
-     * @param nonce
-     * @param contractAddress
-     * @param
-     * @param callBack
-     * @return txHash
-     * @throws IOException
-     */
-    public String callContractJvm(BigInteger nonce, String contractAddress, String method, List<String> args, Credentials credential, EventCallBack callBack) throws IOException {
-        Message.TransactionPbTmp.Builder buider = Message.TransactionPbTmp.newBuilder();
-        buider.setFrom(ByteString.copyFromUtf8(credential.getAddress()));
-        buider.setTo(contractAddress);
-        buider.setMethod(method);
-        buider.setNonce(nonce.longValue());
-        if (args != null) {
-            for (int i = 0; i < args.size(); i++) {
-                buider.setArgs(i, args.get(i));
-            }
-        }
-
-        byte[] bs = buider.build().toByteArray();
-        byte[] hash = Hash.sha3(bs);
-        Sign.SignatureData sign = Sign.signMessage(bs, credential.getEcKeyPair());
-
-        Message.TransactionPb.Builder pbBuilder = Message.TransactionPb.newBuilder();
-        pbBuilder.setFrom(ByteString.copyFromUtf8(credential.getAddress()));
-        pbBuilder.setTo(contractAddress);
-        pbBuilder.setMethod(method);
-        pbBuilder.setNonce(nonce.longValue());
-        if (args != null) {
-            for (int i = 0; i < args.size(); i++) {
-                pbBuilder.setArgs(i, args.get(i));
-            }
-        }
-        pbBuilder.setHash(ByteString.copyFrom(hash));
-        pbBuilder.setS(ByteString.copyFrom(sign.getS()));
-        pbBuilder.setR(ByteString.copyFrom(sign.getR()));
-        pbBuilder.setV(ByteString.copyFrom(new byte[]{sign.getV()}));
-
-        String hashStr = Numeric.toHexString(hash);
-
-        Response<BaseResp<ResultCommit>> httpRes = stub.broadcastTxCommit(Numeric.toHexString(pbBuilder.build().toByteArray())).execute();
-        handleRespCommit(httpRes);
-        sb.onNext(new QueryRecTask(hashStr, callBack, this));
-
-        return hashStr;
-    }
 
     /**
      *
@@ -339,22 +261,22 @@ public class NodeSrv {
      *
      * @param binaryCode 合约二进制编译结果
      * @param
-     * @param credentials
+     * @param privateKey
      * @param nonce
      * @return contract address 合约地址
      * @throws IOException
      */
-    public String deployContract(String binaryCode, List<Type> constructorParameters, Credentials credentials, BigInteger nonce) throws IOException {
+    public String deployContract(String binaryCode, List<Type> constructorParameters, PrivateKey privateKey, BigInteger nonce) throws IOException {
         RawTransaction tx = TransactionUtil.createDelopyContractTransaction(binaryCode, constructorParameters, nonce);
-        Sign.SignatureData sig = CryptoUtil.generateSignature(tx, credentials);
-        DeployContractResult res = doDeployContract(binaryCode, constructorParameters, nonce, sig, credentials.getAddress());
+        Signature sig = CryptoUtil.generateSignature(tx, privateKey);
+        DeployContractResult res = doDeployContract(binaryCode, constructorParameters, nonce, sig, privateKey.getAddress());
         return res.getContractAddr();
     }
 
-    public DeployContractResult deployContractCompl(String binaryCode, List<Type> constructorParameters, Credentials credentials, BigInteger nonce) throws IOException {
+    public DeployContractResult deployContractCompl(String binaryCode, List<Type> constructorParameters, PrivateKey privateKey, BigInteger nonce) throws IOException {
         RawTransaction tx = TransactionUtil.createDelopyContractTransaction(binaryCode, constructorParameters, nonce);
-        Sign.SignatureData sig = CryptoUtil.generateSignature(tx, credentials);
-        DeployContractResult res = doDeployContract(binaryCode, constructorParameters, nonce, sig, credentials.getAddress());
+        Signature sig = CryptoUtil.generateSignature(tx, privateKey);
+        DeployContractResult res = doDeployContract(binaryCode, constructorParameters, nonce, sig, privateKey.getAddress());
         return res;
     }
 
@@ -370,12 +292,12 @@ public class NodeSrv {
      * @return contract address 合约地址
      * @throws IOException
      */
-    public String deployContractWithSig(String binaryCode, List<Type> constructorParameters, BigInteger nonce, Sign.SignatureData sig, String address) throws IOException {
+    public String deployContractWithSig(String binaryCode, List<Type> constructorParameters, BigInteger nonce, Signature sig, String address) throws IOException {
         DeployContractResult deployContractResult = doDeployContract(binaryCode, constructorParameters, nonce, sig, address);
         return deployContractResult.getContractAddr();
     }
 
-    private DeployContractResult doDeployContract(String binaryCode, List<Type> constructorParameters, BigInteger nonce, Sign.SignatureData sig, String address) throws IOException {
+    private DeployContractResult doDeployContract(String binaryCode, List<Type> constructorParameters, BigInteger nonce, Signature sig, String address) throws IOException {
         RawTransaction tx = TransactionUtil.createDelopyContractTransaction(binaryCode, constructorParameters, nonce);
         byte[] message = TransactionUtil.encodeWithSig(tx, sig);
         String txHash = sendTxToNode(message, true, null);

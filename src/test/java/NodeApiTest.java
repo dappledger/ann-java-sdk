@@ -4,6 +4,9 @@ import com.rendez.api.NodeSrv;
 import com.rendez.api.TransactionReceipt;
 import com.rendez.api.TransactionUtil;
 import com.rendez.api.bean.model.DeployContractResult;
+import com.rendez.api.crypto.PrivateKey;
+import com.rendez.api.crypto.PrivateKeyECDSA;
+import com.rendez.api.crypto.Signature;
 import lombok.extern.slf4j.Slf4j;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.vm.LogInfo;
@@ -13,14 +16,13 @@ import org.junit.Test;
 import org.web3j.abi.FunctionReturnDecoder;
 import org.web3j.abi.TypeReference;
 import org.web3j.abi.datatypes.*;
-import org.web3j.crypto.*;
+import org.web3j.crypto.RawTransaction;
 import org.web3j.rlp.*;
 import org.web3j.utils.Numeric;
 
 import java.io.IOException;
 import java.math.BigInteger;
 import java.util.Arrays;
-import java.util.LinkedList;
 import java.util.List;
 
 
@@ -39,6 +41,7 @@ public class NodeApiTest {
     private static String contractAddress;
     //交易哈希
     private static String existTxHash;
+    private static PrivateKey privKey = new PrivateKeyECDSA(PRIVATE_KEY);
 
 
 
@@ -47,12 +50,11 @@ public class NodeApiTest {
     public static void init() throws IOException{
         nodeSrv = new NodeSrv("http://zgvm:46657");
         // 初始化contractAddress existTxHash
-        Credentials credentials = Credentials.create(PRIVATE_KEY);
-        String accountAddress = credentials.getAddress();
+        String accountAddress = privKey.getAddress();
         //获取nonce
         int nonce = nodeSrv.queryNonce(accountAddress);
         //部署合约, 初始化contractAddress
-        DeployContractResult deployRes = nodeSrv.deployContractCompl(bCode, Arrays.asList(), credentials, BigInteger.valueOf(nonce));
+        DeployContractResult deployRes = nodeSrv.deployContractCompl(bCode, Arrays.asList(), privKey, BigInteger.valueOf(nonce));
         contractAddress = deployRes.getContractAddr();
         log.info("contractAddr {}",contractAddress);
 
@@ -68,7 +70,7 @@ public class NodeApiTest {
         existTxHash = nodeSrv.callContractEvm(BigInteger.valueOf(nonce),
                 contractAddress,
                 functionDef, //函数接口定义
-                credentials,
+                privKey,
                 new DemoEventCallBack(DEPOSIT)); //callBack
         log.info("txHash {}" ,existTxHash);
     }
@@ -77,13 +79,12 @@ public class NodeApiTest {
 
     @Test
     public void testDeployContract() throws IOException, InterruptedException {
-        Credentials credentials = Credentials.create(PRIVATE_KEY);
-        String accountAddress = credentials.getAddress();
+        String accountAddress = privKey.getAddress();
         //获取nonce
         int nonce = nodeSrv.queryNonce(accountAddress);
         log.info("nonce {}" , nonce);
         //部署合约
-        DeployContractResult deployRes = nodeSrv.deployContractCompl(bCode, Arrays.asList(), credentials, BigInteger.valueOf(nonce));
+        DeployContractResult deployRes = nodeSrv.deployContractCompl(bCode, Arrays.asList(), privKey, BigInteger.valueOf(nonce));
         log.info("contractAddr {}",deployRes.getContractAddr());
         log.info("deploy txHash {}",deployRes.getTxHash());
         Thread.sleep(1000);
@@ -92,35 +93,32 @@ public class NodeApiTest {
 
     @Test
     public void testQueryContract() throws IOException, InterruptedException {
-        Credentials credentials = Credentials.create(PRIVATE_KEY);
-        String address = credentials.getAddress();
+        String address = privKey.getAddress();
         int nonce = nodeSrv.queryNonce(address);
         log.info("nonce {}" , nonce);
         Function functionDef = new Function("queryInfo", Arrays.asList(), Arrays.asList(new TypeReference<Utf8String>() {
         }));
-        List<Type> resp  = nodeSrv.queryContract(BigInteger.valueOf(nonce), contractAddress, functionDef, credentials);
+        List<Type> resp  = nodeSrv.queryContract(BigInteger.valueOf(nonce), contractAddress, functionDef, privKey);
         log.info("resp {}", resp);
         Thread.sleep(5000);
     }
 
     @Test
     public void testQueryContractWithSig() throws IOException{
-        Credentials credentials = Credentials.create(PRIVATE_KEY);
-        String address = credentials.getAddress();
+        String address = privKey.getAddress();
         int nonce = nodeSrv.queryNonce(address);
         log.info("nonce {}" , nonce);
         Function functionDef = new Function("queryInfo", Arrays.asList(), Arrays.asList(new TypeReference<Utf8String>() {
         }));
         RawTransaction tx = TransactionUtil.createCallContractTransaction(BigInteger.valueOf(nonce), contractAddress, functionDef);
-        Sign.SignatureData sig = CryptoUtil.generateSignature(tx, credentials);
+        Signature sig = CryptoUtil.generateSignature(tx, privKey);
         List<Type> resp  = nodeSrv.queryContractWithSig(BigInteger.valueOf(nonce), contractAddress, functionDef, sig);
         log.info("resp {}", resp);
     }
 
     @Test
-    public void testCallContactWithSig() throws IOException, InterruptedException {
-        Credentials credentials = Credentials.create(PRIVATE_KEY);
-        String address = credentials.getAddress();
+    public void testCallContactWithSig() throws IOException, InterruptedException{
+        String address = privKey.getAddress();
         int nonce = nodeSrv.queryNonce(address);
         log.info("nonce {}" , nonce);
 
@@ -134,7 +132,7 @@ public class NodeApiTest {
 
         Function functionDef = new Function("deposit", Arrays.asList(), Arrays.asList());
         RawTransaction tx = TransactionUtil.createCallContractTransaction(BigInteger.valueOf(nonce), contractAddress, functionDef);
-        Sign.SignatureData sig = CryptoUtil.generateSignature(tx, credentials);
+        Signature sig = CryptoUtil.generateSignature(tx, privKey);
         String resp = nodeSrv.callContractEvmWithSig(BigInteger.valueOf(nonce),
                 contractAddress,
                 functionDef, //函数接口定义
@@ -148,13 +146,12 @@ public class NodeApiTest {
 
 
     @Test
-    public void testCallContactAsync() throws IOException, InterruptedException {
+    public void testCallContactAsync() throws IOException, InterruptedException{
 
-        /**
-         * 参考test.sol
+        /*
+          参考test.sol
          */
-        Credentials credentials = Credentials.create(PRIVATE_KEY);
-        String address = credentials.getAddress();
+        String address = privKey.getAddress();
         int nonce = nodeSrv.queryNonce(address);
         log.info("nonce {}" , nonce);
 
@@ -171,35 +168,18 @@ public class NodeApiTest {
         String resp = nodeSrv.callContractEvm(BigInteger.valueOf(nonce),
                 contractAddress,
                 functionDef, //函数接口定义
-                credentials,
+                privKey,
                 new DemoEventCallBack(DEPOSIT), false); //callBack
         log.info("abc" + resp);
         Thread.sleep(10000);
     }
 
 
-    @Test
-    public void testBatchCallContract() throws IOException{
-        Credentials credentials = Credentials.create(PRIVATE_KEY);
-        String address = credentials.getAddress();
-        int nonce = nodeSrv.queryNonce(address);
-        log.info("nonce {}" , nonce);
-        List<byte[]> txs = new LinkedList<>();
-        Function functionDef = new Function("deposit", Arrays.asList(), Arrays.asList());
-        for(int i=0;i<500;i++){
-            RawTransaction tx = TransactionUtil.createCallContractTransaction(BigInteger.valueOf(nonce), contractAddress, functionDef);
-            Sign.SignatureData sig = CryptoUtil.generateSignature(tx, credentials);
-            byte[] txData = TransactionUtil.encodeWithSig(tx, sig);
-            txs.add(txData);
-            nonce++;
-        }
-        List<String> txHashes = nodeSrv.batchCallContractEvm(txs);
-        log.info("response txHashes {}", txHashes);
-    }
+
 
     @Test
     public void testQueryNonce() throws IOException {
-        String address = Credentials.create(PRIVATE_KEY).getAddress();
+        String address = privKey.getAddress();
         int resp = nodeSrv.queryNonce(address);
         log.info("testQueryNonce {}", resp);
     }

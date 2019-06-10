@@ -9,8 +9,6 @@ import java.util.List;
 
 /**
  * 用户自定义处理event 的callback
- *
- * @param
  */
 @Data
 public abstract class EventCallBack {

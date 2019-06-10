@@ -1,5 +1,7 @@
 package com.rendez.api;
 
+import com.rendez.api.crypto.PrivateKey;
+import com.rendez.api.crypto.Signature;
 import org.web3j.abi.FunctionEncoder;
 import org.web3j.abi.datatypes.Function;
 import org.web3j.abi.datatypes.Type;
@@ -10,13 +12,11 @@ import org.web3j.rlp.RlpString;
 import org.web3j.rlp.RlpType;
 import org.web3j.utils.Bytes;
 import org.web3j.utils.Numeric;
-
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 
 public class TransactionUtil {
-
     /**
      * 创建合约调用交易
      *
@@ -44,7 +44,7 @@ public class TransactionUtil {
     }
 
     /**
-     * decode链上交易
+     * decode单笔链上交易
      *
      * @param txMsg 链上交易
      * @return 原始交易信息
@@ -53,6 +53,8 @@ public class TransactionUtil {
         SignedRawTransaction signedRawTransaction = (SignedRawTransaction) TransactionDecoder.decode(txMsg);
         return signedRawTransaction;
     }
+
+
     /**
      * encode交易
      *
@@ -64,14 +66,16 @@ public class TransactionUtil {
     }
 
     /**
-     * 使用私钥签名并encode交易
+     * encode原始交易和签名
      *
      * @param tx
      * @return
      */
-    public static byte[] encodeWithCredentials(RawTransaction tx, Credentials credentials) {
-        return TransactionEncoder.signMessage(tx, credentials);
+    public static byte[] encode(RawTransaction tx, PrivateKey privateKey){
+        Signature signature =  CryptoUtil.generateSignature(tx, privateKey);
+        return encodeWithSig(tx, signature);
     }
+
 
     /**
      * 使用已生成的签名encode交易
@@ -79,13 +83,17 @@ public class TransactionUtil {
      * @param tx
      * @return
      */
-    public static byte[] encodeWithSig(RawTransaction tx, Sign.SignatureData sig) {
+    public static byte[] encodeWithSig(RawTransaction tx, Signature sig) {
         List<RlpType> values = asRlpValues(tx, sig);
         RlpList rlpList = new RlpList(values);
         return RlpEncoder.encode(rlpList);
     }
 
-    private static List<RlpType> asRlpValues(RawTransaction rawTransaction, Sign.SignatureData signatureData) {
+
+
+
+    private static List<RlpType> asRlpValues(RawTransaction rawTransaction, Signature sig) {
+
         List<RlpType> result = new ArrayList();
         result.add(RlpString.create(rawTransaction.getNonce()));
         result.add(RlpString.create(rawTransaction.getGasPrice()));
@@ -100,10 +108,10 @@ public class TransactionUtil {
         result.add(RlpString.create(rawTransaction.getValue()));
         byte[] data = Numeric.hexStringToByteArray(rawTransaction.getData());
         result.add(RlpString.create(data));
-        if (signatureData != null) {
-            result.add(RlpString.create(signatureData.getV()));
-            result.add(RlpString.create(Bytes.trimLeadingZeroes(signatureData.getR())));
-            result.add(RlpString.create(Bytes.trimLeadingZeroes(signatureData.getS())));
+        if (sig != null) {
+            result.add(RlpString.create(sig.getV()));
+            result.add(RlpString.create(Bytes.trimLeadingZeroes(sig.getR())));
+            result.add(RlpString.create(Bytes.trimLeadingZeroes(sig.getS())));
         }
         return result;
     }
