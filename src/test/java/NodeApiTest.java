@@ -3,6 +3,7 @@ import com.rendez.api.CryptoUtil;
 import com.rendez.api.NodeSrv;
 import com.rendez.api.TransactionReceipt;
 import com.rendez.api.TransactionUtil;
+import com.rendez.api.bean.model.BlockHashResult;
 import com.rendez.api.bean.model.DeployContractResult;
 import com.rendez.api.crypto.PrivateKey;
 import com.rendez.api.crypto.PrivateKeyECDSA;
@@ -33,12 +34,12 @@ public class NodeApiTest {
     private static final String bCode = "608060405234801561001057600080fd5b506101c3806100206000396000f30060806040526004361061004b5763ffffffff7c01000000000000000000000000000000000000000000000000000000006000350416632c560ec08114610050578063d0e30db0146100da575b600080fd5b34801561005c57600080fd5b506100656100f1565b6040805160208082528351818301528351919283929083019185019080838360005b8381101561009f578181015183820152602001610087565b50505050905090810190601f1680156100cc5780820380516001836020036101000a031916815260200191505b509250505060405180910390f35b3480156100e657600080fd5b506100ef610128565b005b60408051808201909152600481527f6162636400000000000000000000000000000000000000000000000000000000602082015290565b6040805133808252602082015260608183018190526003908201527f6162630000000000000000000000000000000000000000000000000000000000608082015290517f4db2efd59f3e5a97173b6b255ce6ebaea50d7f27654cf39705afa269e2529b3a9181900360a00190a15600a165627a7a7230582042b1e64c23be2b8da97983a39c7730a4a4897b165984a0352f6275d3008f13b90029";
 
     //私钥
-    private static final String PRIVATE_KEY = "6d79264403d667f75caf2f1dca6412c6922b15433b515850c5c00a2aa12010e9";
+    private static final String PRIVATE_KEY = "0xe19533f586d3356f1c2ecb30d65430cfc15ef37907512a83812454c37aa429b7";
 
     //节点服务
     private static NodeSrv nodeSrv;
     //合约地址
-    private static String contractAddress;
+    private static String contractAddress = "0x51d26d1acf500fcb651448aca517c4d34a2ed3e1";
     //交易哈希
     private static String existTxHash;
     private static PrivateKey privKey = new PrivateKeyECDSA(PRIVATE_KEY);
@@ -48,31 +49,31 @@ public class NodeApiTest {
 
     @BeforeClass
     public static void init() throws IOException{
-        nodeSrv = new NodeSrv("http://zgvm:46657");
-        // 初始化contractAddress existTxHash
-        String accountAddress = privKey.getAddress();
-        //获取nonce
-        int nonce = nodeSrv.queryNonce(accountAddress);
-        //部署合约, 初始化contractAddress
-        DeployContractResult deployRes = nodeSrv.deployContractCompl(bCode, Arrays.asList(), privKey, BigInteger.valueOf(nonce));
-        contractAddress = deployRes.getContractAddr();
-        log.info("contractAddr {}",contractAddress);
-
-        nonce++;
-        // event 定义
-        Event DEPOSIT = new Event("Deposit",
-                Arrays.asList(),
-                Arrays.asList(new TypeReference<Address>() {
-                }, new TypeReference<Address>() {
-                }, new TypeReference<Utf8String>() {
-                }));
-        Function functionDef = new Function("deposit", Arrays.asList(), Arrays.asList());
-        existTxHash = nodeSrv.callContractEvm(BigInteger.valueOf(nonce),
-                contractAddress,
-                functionDef, //函数接口定义
-                privKey,
-                new DemoEventCallBack(DEPOSIT)); //callBack
-        log.info("txHash {}" ,existTxHash);
+        nodeSrv = new NodeSrv("http://localhost:46657");
+//        // 初始化contractAddress existTxHash
+//        String accountAddress = privKey.getAddress();
+//        //获取nonce
+//        int nonce = nodeSrv.queryNonce(accountAddress);
+//        //部署合约, 初始化contractAddress
+//        DeployContractResult deployRes = nodeSrv.deployContractCompl(bCode, Arrays.asList(), privKey, BigInteger.valueOf(nonce));
+//        contractAddress = deployRes.getContractAddr();
+//        log.info("contractAddr {}",contractAddress);
+//
+//        nonce++;
+//        // event 定义
+//        Event DEPOSIT = new Event("Deposit",
+//                Arrays.asList(),
+//                Arrays.asList(new TypeReference<Address>() {
+//                }, new TypeReference<Address>() {
+//                }, new TypeReference<Utf8String>() {
+//                }));
+//        Function functionDef = new Function("deposit", Arrays.asList(), Arrays.asList());
+//        existTxHash = nodeSrv.callContractEvm(BigInteger.valueOf(nonce),
+//                contractAddress,
+//                functionDef, //函数接口定义
+//                privKey,
+//                new DemoEventCallBack(DEPOSIT)); //callBack
+//        log.info("txHash {}" ,existTxHash);
     }
 
 
@@ -189,6 +190,32 @@ public class NodeApiTest {
         List<LogInfo> resp = nodeSrv.queryReceipt(existTxHash);
         Assert.assertNotNull(resp);
         log.info("" + resp);
+    }
+
+    @Test//0xaf1cd133d0f9b3a5f9fed57222dc59fa7d71de37c298c1dcfae04a6a0ed77806
+    public void originDemo() throws Exception {//0x8ed8c118709d0cd7657343ff3c630e38e0dcb322c2ac3d6bf1b06eca6577dbd5
+        //0x9072fd4b203c0cc83ee697de19a245c95a2e9e36738f52afe6c3d6dac20e05cc
+        TransactionReceipt receipt = nodeSrv.queryReceiptRaw("0x9072fd4b203c0cc83ee697de19a245c95a2e9e36738f52afe6c3d6dac20e05cc");
+        log.info(receipt.toString());
+    }
+
+    @Test
+    public void hashDemo() throws Exception {
+        BlockHashResult hashs = nodeSrv.queryHashs("E54C26ECEF3EAD746C6B3F4433B642049A383326");
+        System.out.println(hashs);
+    }
+
+    @Test
+    public void demo(){
+        for(int i=0;i<1024;i++){
+            byte[] bb = new BigInteger(i+"").toByteArray();
+            for(byte b:bb){
+                System.out.print(b);
+                System.out.print("'");
+            }
+            System.out.println();
+        }
+
     }
 
     @Test

@@ -9,6 +9,7 @@ import org.web3j.utils.Numeric;
 
 import java.io.ByteArrayOutputStream;
 import java.math.BigInteger;
+import java.security.SignatureException;
 
 public class CryptoUtil {
 
@@ -22,6 +23,41 @@ public class CryptoUtil {
         return privateKey.sign(TransactionUtil.encode(rtx));
     }
 
+    /**
+     * 验证交易是否签名有效
+     * @param txMsg
+     * @param address
+     * @return bool 签名和地址是否一致
+     * @throws SignatureException
+     */
+    public static boolean verifySignature(String txMsg, String address) throws SignatureException {
+        SignedRawTransaction signedRawTransaction = (SignedRawTransaction) TransactionDecoder.decode(txMsg);
+        String signerAddress = signedRawTransaction.getFrom();
+        return signerAddress.equals(address);
+    }
+
+
+    /**
+     * 原始签名封装成web3j签名
+     * @param v
+     * @param r
+     * @param s
+     * @return
+     */
+    public static Sign.SignatureData newSignature(byte v, byte[] r, byte[] s){
+        return  new Sign.SignatureData(v, r, s);
+    }
+
+
+    /**
+     * 生成签名
+     * @param rtx 原始交易
+     * @param credentials 秘钥
+     * @return 签名
+     */
+    public static Sign.SignatureData generateSignature(RawTransaction rtx, Credentials credentials){
+        return Sign.signMessage(TransactionUtil.encode(rtx), credentials.getEcKeyPair());
+    }
 
 
     /**

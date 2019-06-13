@@ -5,7 +5,8 @@ import org.web3j.utils.Numeric;
 public enum QueryType {
     Contract("0"),
     Nonce("1"),
-    Receipt("3");
+    Receipt("3"),
+    BlockHashs("10");
 
     QueryType(String code) {
         this.code = new Byte(code);

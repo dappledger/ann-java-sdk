@@ -3,6 +3,7 @@ package com.rendez.api;
 
 import com.rendez.api.bean.exception.BaseException;
 import com.rendez.api.bean.exception.ErrCode;
+import com.rendez.api.bean.model.BlockHashResult;
 import com.rendez.api.bean.model.DeployContractResult;
 import com.rendez.api.bean.rendez.*;
 import com.rendez.api.crypto.PrivateKey;
@@ -14,6 +15,8 @@ import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.OkHttpClient;
 import org.apache.commons.lang.StringUtils;
+import org.ethereum.util.RLP;
+import org.ethereum.util.RLPList;
 import org.ethereum.vm.LogInfo;
 import org.web3j.abi.FunctionReturnDecoder;
 import org.web3j.abi.datatypes.Function;
@@ -29,6 +32,7 @@ import retrofit2.converter.gson.GsonConverterFactory;
 
 import java.io.IOException;
 import java.math.BigInteger;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -280,6 +284,33 @@ public class NodeSrv {
         return res;
     }
 
+    /***
+     * 通过块hash查询块上有效交易列表
+     *
+     * @param blockHash
+     * @return
+     * @throws Exception
+     */
+    public BlockHashResult blockHashs(String blockHash) throws Exception {
+        Response<BaseResp<ResultQuery>> httpRes = stub.query(QueryType.BlockHashs.padd(blockHash)).execute();
+        handleRespQuery(httpRes);
+        BaseResp<ResultQuery> resp = httpRes.body();
+        log.debug(resp.toString());
+        if (resp.getResult().getResult().getData() != null) {
+            byte[] rlp = Numeric.hexStringToByteArray(resp.getResult().getResult().getData());
+            RLPList params = RLP.decode2(rlp);
+            RLPList txList = (RLPList) params.get(0);
+            if(txList.size()>0){
+                BlockHashResult result = new BlockHashResult();
+                List<String> txs = new ArrayList<>();
+                txList.forEach(item -> txs.add(com.rendez.api.util.ByteUtil.bytesToHex(item.getRLPData())));
+                result.setHashs(txs);
+                result.setLength(txs.size());
+                return result;
+            }
+        }
+        return new BlockHashResult();
+    }
 
     /**
      *
@@ -300,7 +331,7 @@ public class NodeSrv {
     private DeployContractResult doDeployContract(String binaryCode, List<Type> constructorParameters, BigInteger nonce, Signature sig, String address) throws IOException {
         RawTransaction tx = TransactionUtil.createDelopyContractTransaction(binaryCode, constructorParameters, nonce);
         byte[] message = TransactionUtil.encodeWithSig(tx, sig);
-        String txHash = sendTxToNode(message, true, null);
+        String txHash = sendTxToNode(message, false, null);
         DeployContractResult deployContractResult = new DeployContractResult();
         deployContractResult.setTxHash(txHash);
         deployContractResult.setContractAddr(ContractUtils.generateContractAddress(address, nonce));

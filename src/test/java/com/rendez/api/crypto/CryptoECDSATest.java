@@ -18,9 +18,11 @@ public class CryptoECDSATest {
     public void testCreate() {
 
         for (int i=0;i<1000;i++){
-            String privKey = PrivateKeyECDSA.Create().toHexString();
-            Assert.assertTrue(privKey.startsWith("0x"));
-            Assert.assertEquals(66, privKey.length());
+            PrivateKey privKey = PrivateKeyECDSA.Create();
+            String key = privKey.toHexString();
+            Assert.assertTrue(key.startsWith("0x"));
+            Assert.assertEquals(66, key.length());
+            Assert.assertEquals(42,privKey.getAddress().length());
         }
     }
 

@@ -7,9 +7,11 @@ import org.ethereum.vm.LogInfo;
 import org.spongycastle.util.BigIntegers;
 import org.spongycastle.util.encoders.Hex;
 
+import java.lang.reflect.Array;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import static org.apache.commons.lang3.ArrayUtils.nullToEmpty;
@@ -25,6 +27,12 @@ public class TransactionReceipt {
 
     private Transaction transaction;
 
+    private BigInteger height;
+    private BigInteger time;
+    private String from;
+    private String to;
+    private String contractAddress;
+
     private byte[] postTxState = EMPTY_BYTE_ARRAY;
     private byte[] cumulativeGas = EMPTY_BYTE_ARRAY;
     private Bloom bloomFilter = new Bloom();
@@ -36,6 +44,7 @@ public class TransactionReceipt {
 
 
 
+
     /* Tx Receipt in encoded form */
     private byte[] rlpEncoded;
 
@@ -43,22 +52,39 @@ public class TransactionReceipt {
     }
 
     public TransactionReceipt(byte[] rlp) {
-
         RLPList params = RLP.decode2(rlp);
         RLPList receipt = (RLPList) params.get(0);
 
-        RLPItem postTxStateRLP = (RLPItem) receipt.get(0);
-        RLPItem cumulativeGasRLP = (RLPItem) receipt.get(1);
-        RLPItem bloomRLP = (RLPItem) receipt.get(2);
-        RLPItem result = (RLPItem) receipt.get(3);
-        RLPList logs = (RLPList) receipt.get(5);
-        RLPItem gasUsedRLP = (RLPItem) receipt.get(6);
+        RLPItem heightRLP = (RLPItem) receipt.get(0);
+        height = new BigInteger(fixByte(heightRLP.getRLPData()));
+
+        RLPItem timestampRLP = (RLPItem) receipt.get(1);
+        time = new BigInteger(fixByte(timestampRLP.getRLPData()));
+
+        RLPItem fromRLP = (RLPItem) receipt.get(2);
+        from = com.rendez.api.util.ByteUtil.bytesToHex(fromRLP.getRLPData());
+        RLPItem toRLP = (RLPItem) receipt.get(3);
+        to = com.rendez.api.util.ByteUtil.bytesToHex(toRLP.getRLPData());
+
+        RLPItem postTxStateRLP = (RLPItem) receipt.get(4);
+
+        RLPItem cumulativeGasRLP = (RLPItem) receipt.get(5);
+
+        RLPItem bloomRLP = (RLPItem) receipt.get(6);
+        RLPItem txHash = (RLPItem) receipt.get(7);
+        RLPItem contractAddressRLP = (RLPItem) receipt.get(8);
+        contractAddress = com.rendez.api.util.ByteUtil.bytesToHex(contractAddressRLP.getRLPData());
+
+        RLPList logs = (RLPList) receipt.get(9);
+        RLPItem gasUsedRLP = (RLPItem) receipt.get(10);
+
+        RLPItem statusRLP = (RLPItem) receipt.get(11);
 
         postTxState = nullToEmpty(postTxStateRLP.getRLPData());
         cumulativeGas = cumulativeGasRLP.getRLPData();
         bloomFilter = new Bloom(bloomRLP.getRLPData());
         gasUsed = gasUsedRLP.getRLPData();
-        executionResult = (executionResult = result.getRLPData()) == null ? EMPTY_BYTE_ARRAY : executionResult;
+        executionResult = (executionResult = txHash.getRLPData()) == null ? EMPTY_BYTE_ARRAY : executionResult;
         for (RLPElement log : logs) {
             LogInfo logInfo = new LogInfo(log.getRLPData());
             logInfoList.add(logInfo);
@@ -67,30 +93,40 @@ public class TransactionReceipt {
         rlpEncoded = rlp;
     }
 
-
-    public TransactionReceipt(byte[] postTxState, byte[] cumulativeGas,
-                              Bloom bloomFilter, List<LogInfo> logInfoList) {
-        this.postTxState = postTxState;
-        this.cumulativeGas = cumulativeGas;
-        this.bloomFilter = bloomFilter;
-        this.logInfoList = logInfoList;
-    }
-
-    public TransactionReceipt(final RLPList rlpList) {
-        if (rlpList == null || rlpList.size() != 4)
-            throw new RuntimeException("Should provide RLPList with postTxState, cumulativeGas, bloomFilter, logInfoList");
-
-        this.postTxState = rlpList.get(0).getRLPData();
-        this.cumulativeGas = rlpList.get(1).getRLPData();
-        this.bloomFilter = new Bloom(rlpList.get(2).getRLPData());
-
-        List<LogInfo> logInfos = new ArrayList<>();
-        for (RLPElement logInfoEl: (RLPList) rlpList.get(3)) {
-            LogInfo logInfo = new LogInfo(logInfoEl.getRLPData());
-            logInfos.add(logInfo);
+    //修复一些rlp解码后的byte缺位
+    public  byte[] fixByte(byte[] v) {
+        if(v.length == 1 && v[0] <0){
+            byte[] result = new byte[2];
+            result[0] = 0;
+            result[1] = v[0];
+            return result;
         }
-        this.logInfoList = logInfos;
+        return v;
     }
+
+//    public TransactionReceipt(byte[] postTxState, byte[] cumulativeGas,
+//                              Bloom bloomFilter, List<LogInfo> logInfoList) {
+//        this.postTxState = postTxState;
+//        this.cumulativeGas = cumulativeGas;
+//        this.bloomFilter = bloomFilter;
+//        this.logInfoList = logInfoList;
+//    }
+//
+//    public TransactionReceipt(final RLPList rlpList) {
+//        if (rlpList == null || rlpList.size() != 4)
+//            throw new RuntimeException("Should provide RLPList with postTxState, cumulativeGas, bloomFilter, logInfoList");
+//
+//        this.postTxState = rlpList.get(0).getRLPData();
+//        this.cumulativeGas = rlpList.get(1).getRLPData();
+//        this.bloomFilter = new Bloom(rlpList.get(2).getRLPData());
+//
+//        List<LogInfo> logInfos = new ArrayList<>();
+//        for (RLPElement logInfoEl: (RLPList) rlpList.get(3)) {
+//            LogInfo logInfo = new LogInfo(logInfoEl.getRLPData());
+//            logInfos.add(logInfo);
+//        }
+//        this.logInfoList = logInfos;
+//    }
 
     public byte[] getPostTxState() {
         return postTxState;
@@ -241,6 +277,11 @@ public class TransactionReceipt {
         // todo: fix that
 
         return "TransactionReceipt[" +
+                "\n  , height=" + height +
+                "\n  , time=" + time +
+                "\n  , from=" + from +
+                "\n  , to=" + to +
+                "\n  , contractAddress=" + contractAddress +
                 "\n  , postTxState=" + Hex.toHexString(postTxState) +
                 "\n  , cumulativeGas=" + Hex.toHexString(cumulativeGas) +
                 "\n  , gasUsed=" + Hex.toHexString(gasUsed) +
