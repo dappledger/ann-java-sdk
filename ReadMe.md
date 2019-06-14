@@ -195,3 +195,9 @@ List<String> batchCallContractEvm(List<byte[]> txs)
 String deployContract(String binaryCode, List<Type> constructorParameters, Credentials credentials, BigInteger nonce)
 ```
 部署合约，返回合约地址
+
+#### blockHashs
+通过块hash查询块中有效交易
+```java
+BlockHashResult blockHashs(String blockHash)
+```
