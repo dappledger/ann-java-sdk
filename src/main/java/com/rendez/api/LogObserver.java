@@ -26,9 +26,9 @@ public class LogObserver implements Observer<QueryRecTask> {
         long end = System.currentTimeMillis() + task.getEventCallBack().getPollTime() * 1000;
         while (System.currentTimeMillis() < end) {
             try {
-                List<LogInfo> recp = task.getNodeSrv().queryReceipt(task.getTxHash());
+                TransactionReceipt recp = task.getNodeSrv().queryReceiptRaw(task.getTxHash());
                 if (recp != null) {
-                    recp.forEach(log -> task.getEventCallBack().handleLogs(Hex.toHexString(log.getData())));
+                    task.getEventCallBack().handleLogs(recp);
                     return;
                 }
             } catch (Exception e) {

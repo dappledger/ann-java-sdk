@@ -1,8 +1,10 @@
 import com.rendez.api.EventCallBack;
+import com.rendez.api.TransactionReceipt;
 import lombok.extern.slf4j.Slf4j;
 import org.web3j.abi.datatypes.Event;
 import org.web3j.abi.datatypes.Type;
 
+import java.math.BigInteger;
 import java.util.List;
 
 @Slf4j
@@ -26,7 +28,7 @@ public class DemoEventCallBack extends EventCallBack {
      * @param decodeResult
      */
     @Override
-    public void handleEvent(List<Type> decodeResult) {
+    public void handleEvent(List<Type> decodeResult, BigInteger height) {
         log.info("decoded result {}", decodeResult);
         log.info("start to Process Data");
     }

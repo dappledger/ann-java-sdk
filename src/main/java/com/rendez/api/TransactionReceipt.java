@@ -29,6 +29,47 @@ public class TransactionReceipt {
 
     private BigInteger height;
     private BigInteger time;
+
+    public BigInteger getHeight() {
+        return height;
+    }
+
+    public void setHeight(BigInteger height) {
+        this.height = height;
+    }
+
+    public BigInteger getTime() {
+        return time;
+    }
+
+    public void setTime(BigInteger time) {
+        this.time = time;
+    }
+
+    public String getFrom() {
+        return from;
+    }
+
+    public void setFrom(String from) {
+        this.from = from;
+    }
+
+    public String getTo() {
+        return to;
+    }
+
+    public void setTo(String to) {
+        this.to = to;
+    }
+
+    public String getContractAddress() {
+        return contractAddress;
+    }
+
+    public void setContractAddress(String contractAddress) {
+        this.contractAddress = contractAddress;
+    }
+
     private String from;
     private String to;
     private String contractAddress;

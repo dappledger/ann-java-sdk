@@ -6,11 +6,12 @@
 
     <groupId>com.za.rendez.sdk</groupId>
     <artifactId>sdk</artifactId>
-    <version>1.2.0-SNAPSHOT</version>
+    <version>1.2.1-SNAPSHOT</version>
     <properties>
         <web3j.version>4.2.0</web3j.version>
+        <maven.test.skip>true</maven.test.skip>
     </properties>
-    <distributionManagement>
+<!--    <distributionManagement>
         <repository>
             <id>releases</id>
             <name>releases</name>
@@ -21,7 +22,7 @@
             <name>snapshots</name>
             <url>http://10.139.32.180:8080/nexus/content/repositories/snapshots/</url>
         </snapshotRepository>
-    </distributionManagement>
+    </distributionManagement>-->
 
     <repositories>
         <repository>

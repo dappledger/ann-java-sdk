@@ -1,10 +1,12 @@
 package com.rendez.api;
 
 import lombok.Data;
+import org.bouncycastle.util.encoders.Hex;
 import org.web3j.abi.FunctionReturnDecoder;
 import org.web3j.abi.datatypes.Event;
 import org.web3j.abi.datatypes.Type;
 
+import java.math.BigInteger;
 import java.util.List;
 
 /**
@@ -22,6 +24,8 @@ public abstract class EventCallBack {
     //事件格式定义
     private Event event;
 
+    private BigInteger height;
+
     public EventCallBack(int pollTime, Event event) {
         this.pollTime = pollTime;
         this.event = event;
@@ -32,14 +36,18 @@ public abstract class EventCallBack {
         this.pollTime = DEFAULT_WAITE;
     }
 
-    final  void handleLogs(String logData) {
-        List<Type> decodeResult = FunctionReturnDecoder.decode(logData, event.getNonIndexedParameters());
-        handleEvent(decodeResult);
+    final  void handleLogs(TransactionReceipt receipt) {
+        if(receipt.getLogInfoList() != null){
+            receipt.getLogInfoList().forEach(log -> {
+                List<Type> decodeResult = FunctionReturnDecoder.decode(Hex.toHexString(log.getData()), event.getNonIndexedParameters());
+                handleEvent(decodeResult,receipt.getHeight());
+            });
+        }
     }
 
     /**
      * 具体处理业务逻辑代码
      * @param decodeResult
      */
-    public abstract void handleEvent(List<Type> decodeResult);
+    public abstract void handleEvent(List<Type> decodeResult,BigInteger height);
 }

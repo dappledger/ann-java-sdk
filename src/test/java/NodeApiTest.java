@@ -201,7 +201,7 @@ public class NodeApiTest {
 
     @Test
     public void hashDemo() throws Exception {
-        BlockHashResult hashs = nodeSrv.queryHashs("E54C26ECEF3EAD746C6B3F4433B642049A383326");
+        BlockHashResult hashs = nodeSrv.blockHashs("E54C26ECEF3EAD746C6B3F4433B642049A383326");
         System.out.println(hashs);
     }
 
