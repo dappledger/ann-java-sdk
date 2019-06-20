@@ -1,17 +1,43 @@
 package com.rendez.api;
 
 
+import com.rendez.api.blockdb.BlockDbTransaction;
 import com.rendez.api.crypto.PrivateKey;
 import com.rendez.api.crypto.Signature;
+import com.rendez.api.crypto.blockdb.SignedBlockDbTransaction;
 import com.rendez.api.util.ByteUtil;
 import org.web3j.crypto.*;
+import org.web3j.rlp.RlpEncoder;
+import org.web3j.rlp.RlpList;
+import org.web3j.rlp.RlpString;
+import org.web3j.rlp.RlpType;
 import org.web3j.utils.Numeric;
 
 import java.io.ByteArrayOutputStream;
 import java.math.BigInteger;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
 import java.security.SignatureException;
+import java.util.ArrayList;
+import java.util.List;
 
 public class CryptoUtil {
+
+    /**
+     * 生成私钥
+     * @return privKey 私钥
+     * @throws InvalidAlgorithmParameterException
+     * @throws NoSuchAlgorithmException
+     * @throws NoSuchProviderException
+     */
+    public static String generatePrivateKey() throws InvalidAlgorithmParameterException, NoSuchAlgorithmException, NoSuchProviderException {
+        ECKeyPair ecKeyPair = Keys.createEcKeyPair();
+        BigInteger privateKeyInDec = ecKeyPair.getPrivateKey();
+        String privKey = privateKeyInDec.toString(16);
+        return "0x" + privKey;
+    }
+
 
     /**
      * 生成签名
@@ -19,9 +45,19 @@ public class CryptoUtil {
      * @param privateKey 私钥
      * @return 签名
      */
-    public static Signature generateSignature(RawTransaction rtx, PrivateKey privateKey){
+    public static Signature generateSignature(BlockDbTransaction rtx, PrivateKey privateKey){
         return privateKey.sign(TransactionUtil.encode(rtx));
     }
+
+    public static Signature generateBlockSignature(BlockDbTransaction rtx, PrivateKey privateKey){
+        List<RlpType> result = new ArrayList();
+        result.add(RlpString.create(rtx.getTimestamp()));
+        result.add(RlpString.create(rtx.getValue()));
+
+        RlpList rlpList = new RlpList(result);
+        return privateKey.sign(RlpEncoder.encode(rlpList));
+    }
+
 
     /**
      * 验证交易是否签名有效
@@ -31,8 +67,10 @@ public class CryptoUtil {
      * @throws SignatureException
      */
     public static boolean verifySignature(String txMsg, String address) throws SignatureException {
-        SignedRawTransaction signedRawTransaction = (SignedRawTransaction) TransactionDecoder.decode(txMsg);
+        SignedBlockDbTransaction signedRawTransaction = (SignedBlockDbTransaction) com.rendez.api.crypto.blockdb.TransactionDecoder.decode(txMsg);
         String signerAddress = signedRawTransaction.getFrom();
+        System.out.println(signerAddress);
+        System.out.println(address);
         return signerAddress.equals(address);
     }
 
@@ -55,9 +93,11 @@ public class CryptoUtil {
      * @param credentials 秘钥
      * @return 签名
      */
-    public static Sign.SignatureData generateSignature(RawTransaction rtx, Credentials credentials){
+    public static Sign.SignatureData generateSignature(BlockDbTransaction rtx, Credentials credentials){
         return Sign.signMessage(TransactionUtil.encode(rtx), credentials.getEcKeyPair());
     }
+
+
 
 
     /**

@@ -3,10 +3,14 @@ package com.rendez.api;
 
 import com.rendez.api.bean.exception.BaseException;
 import com.rendez.api.bean.exception.ErrCode;
-import com.rendez.api.bean.model.BlockHashResult;
-import com.rendez.api.bean.model.DeployContractResult;
-import com.rendez.api.bean.rendez.*;
+import com.rendez.api.bean.model.BlockDbResult;
+import com.rendez.api.bean.rendez.BaseResp;
+import com.rendez.api.bean.rendez.ResultCommit;
+import com.rendez.api.bean.rendez.ResultQuery;
+import com.rendez.api.blockdb.BlockDbTransaction;
+import com.rendez.api.blockdb.BlockDbUtils;
 import com.rendez.api.crypto.PrivateKey;
+import com.rendez.api.crypto.PrivateKeyECDSA;
 import com.rendez.api.crypto.Signature;
 import io.reactivex.schedulers.Schedulers;
 import io.reactivex.subjects.PublishSubject;
@@ -15,16 +19,6 @@ import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.OkHttpClient;
 import org.apache.commons.lang.StringUtils;
-import org.ethereum.util.RLP;
-import org.ethereum.util.RLPList;
-import org.ethereum.vm.LogInfo;
-import org.web3j.abi.FunctionReturnDecoder;
-import org.web3j.abi.datatypes.Function;
-import org.web3j.abi.datatypes.Type;
-import org.web3j.crypto.*;
-import org.web3j.rlp.RlpDecoder;
-import org.web3j.rlp.RlpList;
-import org.web3j.rlp.RlpString;
 import org.web3j.utils.Numeric;
 import retrofit2.Response;
 import retrofit2.Retrofit;
@@ -32,8 +26,6 @@ import retrofit2.converter.gson.GsonConverterFactory;
 
 import java.io.IOException;
 import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 
@@ -62,283 +54,48 @@ public class NodeSrv {
         sb.subscribeOn(Schedulers.io()).observeOn(Schedulers.io()).subscribe(new LogObserver());
     }
 
-    /**
-     * 查询nonce
-     *
-     * @param address 账户地址
-     * @return nonce
-     * @throws IOException
-     */
-    public Integer queryNonce(String address) throws IOException {
-        Response<BaseResp<ResultQuery>> httpResp = stub.query(QueryType.Nonce.padd(address)).execute();
-        handleRespQuery(httpResp);
-        String nonceStr = httpResp.body().getResult().getResult().getData();
-        if (StringUtils.isBlank(nonceStr)) {
-            throw new BaseException("can not obtain nonce for address " + address);
-        }
-        byte[] rlpEncoded = Numeric.hexStringToByteArray(nonceStr);
-        RlpList decode = RlpDecoder.decode(rlpEncoded);
-        String hexValue = ((RlpString) decode.getValues().get(0)).asString();
-        String cleanHexPrefix = Numeric.cleanHexPrefix(hexValue);
-        return StringUtils.isBlank(cleanHexPrefix) ? 0 : Integer.parseInt(cleanHexPrefix, 16);
+    public String blockdbPuter(String privateKey, byte[] value, boolean isSyn) throws IOException {
+        PrivateKey prk = new PrivateKeyECDSA(privateKey);
+        BlockDbTransaction transaction = new BlockDbTransaction(prk.getAddress(), BigInteger.valueOf(System.currentTimeMillis()), value);
+        Signature signature = CryptoUtil.generateBlockSignature(transaction, prk);
+        byte[] message = TransactionUtil.encodeWithSig(transaction, signature);
+        String txHash = sendTxToNode(message, isSyn);
+        return txHash;
     }
 
-    /**
-     *
-     * 查询交易执行event log
-     *
-     * @param txHash  交易hash
-     * @return
-     * @throws IOException
-     */
-    public List<LogInfo> queryReceipt(String txHash) throws IOException {
-        TransactionReceipt receipt = queryReceiptRaw(txHash);
-        if (receipt != null) {
-            return receipt.getLogInfoList();
-        } else {
-            return null;
-        }
-    }
+    public BlockDbResult blockdbGeter(String key) throws IOException {
 
-    /**
-     *
-     * 查询交易执行receipt
-     *
-     * @param txHash  交易hash
-     * @return
-     * @throws IOException
-     */
-    public TransactionReceipt queryReceiptRaw(String txHash) throws IOException {
-        Response<BaseResp<ResultQuery>> httpRes = stub.query(QueryType.Receipt.padd(txHash)).execute();
+        Response<BaseResp<ResultQuery>> httpRes = stub.query(Numeric.toHexString(Numeric.hexStringToByteArray(key))).execute();
         handleRespQuery(httpRes);
         BaseResp<ResultQuery> resp = httpRes.body();
         log.debug(resp.toString());
         if (resp.getResult().getResult().getData() != null) {
-            byte[] rlp = Numeric.hexStringToByteArray(resp.getResult().getResult().getData());
-            TransactionReceipt res = new TransactionReceipt(rlp);
-            return res;
-        } else {
-            return null;
+            return BlockDbUtils.blockDbResultBuilder(resp.getResult().getResult().getData());
         }
+
+        return new BlockDbResult();
     }
-
-
-    /**
-     * 用秘钥查询合约
-     * @param nonce
-     * @param contractAddress 合约地址
-     * @param function  合约方法
-     * @param privateKey 秘钥
-     * @return
-     * @throws IOException
-     */
-    public List<Type> queryContract(BigInteger nonce, String contractAddress, Function function, PrivateKey privateKey) throws IOException{
-        RawTransaction tx = TransactionUtil.createCallContractTransaction(nonce, contractAddress, function);
-        Signature sig = CryptoUtil.generateSignature(tx, privateKey);
-        return queryContractWithSig(nonce, contractAddress, function, sig);
-    }
-
-    /**
-     * 签名查询合约
-     * @param nonce
-     * @param contractAddress 合约地址
-     * @param function  合约方法
-     * @param sig 签名
-     * @return
-     * @throws IOException
-     */
-    public List<Type> queryContractWithSig(BigInteger nonce, String contractAddress, Function function, Signature sig) throws IOException {
-        RawTransaction tx = TransactionUtil.createCallContractTransaction(nonce, contractAddress, function);
-        byte[] message = TransactionUtil.encodeWithSig(tx, sig);
-        log.debug("raw tx:{}", Numeric.toHexString(message));
-        Response<BaseResp<ResultQuery>> httpRes = stub.query(QueryType.Contract.paddByte(message)).execute();
-        handleRespQuery(httpRes);
-        BaseResp<ResultQuery> resp = httpRes.body();
-        if (resp.getResult().getResult().getData() != null) {
-            String respData =  resp.getResult().getResult().getData();
-            byte[] rlpEncoded = Numeric.hexStringToByteArray(respData);
-            List<Type> someTypes = FunctionReturnDecoder.decode(
-                    Numeric.toHexString(rlpEncoded), function.getOutputParameters());
-            return someTypes;
-        } else {
-            return null;
-        }
-    }
-
-    /**
-     *
-     * 调用evm 合约
-     *
-     * @param nonce
-     * @param contractAddress  合约地址
-     * @param function 合约函数定义
-     * @param privateKey
-     * @return 交易hash
-     * @throws IOException
-     */
-    public String callContractEvm(BigInteger nonce, String contractAddress, Function function, PrivateKey privateKey) throws IOException {
-        return callContractEvm(nonce, contractAddress, function, privateKey, null);
-    }
-
-
-    public String callContractEvm(BigInteger nonce, String contractAddress, Function function, PrivateKey privateKey, EventCallBack callBack) throws IOException {
-        // default call sync
-        return callContractEvm(nonce, contractAddress, function, privateKey, callBack, true);
-    }
-
-    /**
-     *
-     * 调用evm 合约
-     *
-     * @param nonce nonce
-     * @param contractAddress 合约地址
-     * @param function 函数定义
-     * @param privateKey 秘钥
-     * @param callBack 回调函数
-     * @param isSyncCall 是否同步调用
-     * @return txHash 交易哈希
-     * @throws IOException
-     */
-    public String callContractEvm(BigInteger nonce, String contractAddress, Function function, PrivateKey privateKey, EventCallBack callBack, boolean isSyncCall) throws IOException{
-        RawTransaction tx = TransactionUtil.createCallContractTransaction(nonce, contractAddress, function);
-        Signature sig = CryptoUtil.generateSignature(tx, privateKey);
-        return callContractEvmWithSig(nonce, contractAddress, function, sig, callBack, isSyncCall);
-    }
-
-
-    public String callContractEvmWithSig(BigInteger nonce, String contractAddress, Function function, Signature sig, EventCallBack callBack) throws IOException {
-        // default call sync
-        return callContractEvmWithSig(nonce, contractAddress, function, sig, callBack, true);
-    }
-
-    /**
-     *
-     * 使用生成好的签名调用evm 合约
-     *
-     * @param nonce nonce
-     * @param contractAddress 合约地址
-     * @param function 函数定义
-     * @param sig 交易签名
-     * @param callBack 回调函数
-     * @param isSyncCall 是否同步调用
-     * @return txHash 交易哈希
-     * @throws IOException
-     */
-    public String callContractEvmWithSig(BigInteger nonce, String contractAddress, Function function, Signature sig, EventCallBack callBack, boolean isSyncCall) throws IOException {
-        RawTransaction tx = TransactionUtil.createCallContractTransaction(nonce, contractAddress, function);
-        byte[] message = TransactionUtil.encodeWithSig(tx, sig);
-        String txHash = sendTxToNode(message, isSyncCall, callBack);
-        return txHash;
-    }
-
 
     /**
      * 将序列化好的交易广播到链节点
      * broadcast signed and serialized tx to node rpc
-     * @param txMessage 交易（签名并序列化完成）
+     *
+     * @param txMessage  交易（签名并序列化完成）
      * @param isSyncCall 同步/异步上链
-     * @param callBack 回调
      * @return
      * @throws IOException
      */
-    public String sendTxToNode(byte[] txMessage, boolean isSyncCall, EventCallBack callBack) throws IOException {
+    public String sendTxToNode(byte[] txMessage, boolean isSyncCall) throws IOException {
         Response<BaseResp<ResultCommit>> httpRes;
-        if (isSyncCall){
+        if (isSyncCall) {
             httpRes = stub.broadcastTxCommit(Numeric.toHexString(txMessage)).execute();
-        }else {
+        } else {
             httpRes = stub.broadcastTxAsync(Numeric.toHexString(txMessage)).execute();
         }
         handleRespCommit(httpRes);
         String txHash = httpRes.body().getResult().getTx_hash();
-        if (callBack != null) {
-            sb.onNext(new QueryRecTask(txHash, callBack, this));
-        }
         return txHash;
     }
-
-
-
-
-    /**
-     *
-     * 使用私钥部署合约
-     *
-     * @param binaryCode 合约二进制编译结果
-     * @param
-     * @param privateKey
-     * @param nonce
-     * @return contract address 合约地址
-     * @throws IOException
-     */
-    public String deployContract(String binaryCode, List<Type> constructorParameters, PrivateKey privateKey, BigInteger nonce) throws IOException {
-        RawTransaction tx = TransactionUtil.createDelopyContractTransaction(binaryCode, constructorParameters, nonce);
-        Signature sig = CryptoUtil.generateSignature(tx, privateKey);
-        DeployContractResult res = doDeployContract(binaryCode, constructorParameters, nonce, sig, privateKey.getAddress());
-        return res.getContractAddr();
-    }
-
-    public DeployContractResult deployContractCompl(String binaryCode, List<Type> constructorParameters, PrivateKey privateKey, BigInteger nonce) throws IOException {
-        RawTransaction tx = TransactionUtil.createDelopyContractTransaction(binaryCode, constructorParameters, nonce);
-        Signature sig = CryptoUtil.generateSignature(tx, privateKey);
-        DeployContractResult res = doDeployContract(binaryCode, constructorParameters, nonce, sig, privateKey.getAddress());
-        return res;
-    }
-
-    /***
-     * 通过块hash查询块上有效交易列表
-     *
-     * @param blockHash
-     * @return
-     * @throws Exception
-     */
-    public BlockHashResult blockHashs(String blockHash) throws Exception {
-        Response<BaseResp<ResultQuery>> httpRes = stub.query(QueryType.BlockHashs.padd(blockHash)).execute();
-        handleRespQuery(httpRes);
-        BaseResp<ResultQuery> resp = httpRes.body();
-        log.debug(resp.toString());
-        if (resp.getResult().getResult().getData() != null) {
-            byte[] rlp = Numeric.hexStringToByteArray(resp.getResult().getResult().getData());
-            RLPList params = RLP.decode2(rlp);
-            RLPList txList = (RLPList) params.get(0);
-            if(txList.size()>0){
-                BlockHashResult result = new BlockHashResult();
-                List<String> txs = new ArrayList<>();
-                txList.forEach(item -> txs.add(com.rendez.api.util.ByteUtil.bytesToHex(item.getRLPData())));
-                result.setHashs(txs);
-                result.setLength(txs.size());
-                return result;
-            }
-        }
-        return new BlockHashResult();
-    }
-
-    /**
-     *
-     * 使用签名部署合约
-     *
-     * @param binaryCode 合约二进制编译结果
-     * @param
-     * @param address 用户账户地址
-     * @param nonce
-     * @return contract address 合约地址
-     * @throws IOException
-     */
-    public String deployContractWithSig(String binaryCode, List<Type> constructorParameters, BigInteger nonce, Signature sig, String address) throws IOException {
-        DeployContractResult deployContractResult = doDeployContract(binaryCode, constructorParameters, nonce, sig, address);
-        return deployContractResult.getContractAddr();
-    }
-
-    private DeployContractResult doDeployContract(String binaryCode, List<Type> constructorParameters, BigInteger nonce, Signature sig, String address) throws IOException {
-        RawTransaction tx = TransactionUtil.createDelopyContractTransaction(binaryCode, constructorParameters, nonce);
-        byte[] message = TransactionUtil.encodeWithSig(tx, sig);
-        String txHash = sendTxToNode(message, false, null);
-        DeployContractResult deployContractResult = new DeployContractResult();
-        deployContractResult.setTxHash(txHash);
-        deployContractResult.setContractAddr(ContractUtils.generateContractAddress(address, nonce));
-        return deployContractResult;
-    }
-
-
 
     private void handleRespCommit(Response<BaseResp<ResultCommit>> httpRes) {
         if (!httpRes.isSuccessful()) {
@@ -351,7 +108,6 @@ public class NodeSrv {
             throw new BaseException(httpRes.body().getResult().getLog());
         }
     }
-
 
     private void handleRespQuery(Response<BaseResp<ResultQuery>> httpRes) {
         if (!httpRes.isSuccessful()) {

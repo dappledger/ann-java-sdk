@@ -2,6 +2,8 @@ package com.rendez.api.crypto;
 
 import org.web3j.crypto.Sign;
 
+import java.math.BigInteger;
+
 public class SignatureECDSA implements Signature{
 
     private Sign.SignatureData rawSig;
@@ -19,10 +21,13 @@ public class SignatureECDSA implements Signature{
 
     @Override
     public byte[] toBytes() {
-        byte[] sig = new byte[64];
-        System.arraycopy(this.getR(), 0, sig, 0, 32);
-        System.arraycopy(this.getS(), 0, sig, 32,  31);
-        System.arraycopy(this.getV(), 0, sig, 63,  1);
+        byte[] sig = new byte[65];
+        System.arraycopy(this.getR(), 0, sig, 0, 31);
+        System.out.println(new BigInteger(this.getR()));
+        System.arraycopy(this.getS(), 0, sig, 32,  32);
+        System.out.println(new BigInteger(this.getS()));
+        System.arraycopy(this.getV(), 0, sig, 64,  1);
+        //System.out.println(new BigInteger(this.getR()));
         return sig;
     }
 

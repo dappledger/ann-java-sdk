@@ -22,27 +22,6 @@ public class LogObserver implements Observer<QueryRecTask> {
 
     @Override
     public void onNext(QueryRecTask task) {
-        log.debug("get task {}", task);
-        long end = System.currentTimeMillis() + task.getEventCallBack().getPollTime() * 1000;
-        while (System.currentTimeMillis() < end) {
-            try {
-                TransactionReceipt recp = task.getNodeSrv().queryReceiptRaw(task.getTxHash());
-                if (recp != null) {
-                    task.getEventCallBack().handleLogs(recp);
-                    return;
-                }
-            } catch (Exception e) {
-                log.warn("LogObserver queryReceipt", e);
-            }
-
-            try {
-                // always sleep if receipt not found
-                Thread.sleep(Gape);
-            } catch (InterruptedException ignored) {
-            }
-        }
-
-        log.warn("time out for task {}", task);
 
     }
 
