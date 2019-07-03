@@ -1,8 +1,9 @@
 package com.rendez.api;
 
 import com.rendez.api.bean.rendez.BaseResp;
-import com.rendez.api.bean.rendez.ResultCommit;
-import com.rendez.api.bean.rendez.ResultQuery;
+import com.rendez.api.bean.rendez.ResultABCIQuery;
+import com.rendez.api.bean.rendez.BaseResult;
+import com.rendez.api.bean.request.BaseRequest;
 import retrofit2.Call;
 import retrofit2.http.*;
 
@@ -15,9 +16,7 @@ public interface NodeApi {
      */
     @POST("broadcast_tx_commit")
     @FormUrlEncoded
-    Call<BaseResp<ResultCommit>> broadcastTxCommit(@Field("tx") String tx);
-
-
+    Call<BaseResp<BaseResult>> broadcastTxCommit(@Field("tx") String tx);
 
     /**
      * 异步广播交易
@@ -26,22 +25,14 @@ public interface NodeApi {
      */
     @POST("broadcast_tx_async")
     @FormUrlEncoded
-    Call<BaseResp<ResultCommit>> broadcastTxAsync(@Field("tx") String tx);
+    Call<BaseResp<BaseResult>> broadcastTxAsync(@Field("tx") String tx);
 
     /**
-     * 查询交易
-     * @param query
+     * tendermint abci_query
+     * @param request
      * @return
      */
-    @GET("query")
-    Call<BaseResp<ResultQuery>> query(@Query("query") String query);
-
-//    /**
-//     * 查询交易
-//     * @param query
-//     * @return
-//     */
-//    @GET("query")
-//    Call<BaseResp<ResultQuery>> query(@Query("query") String query);
+    @POST("/")
+    Call<BaseResp<ResultABCIQuery>> abciquery(@Body BaseRequest request);
 
 }

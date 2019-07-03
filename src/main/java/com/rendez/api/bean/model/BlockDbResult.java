@@ -1,10 +1,12 @@
 package com.rendez.api.bean.model;
 
 import lombok.Data;
+import lombok.ToString;
 
 import java.math.BigInteger;
 
 @Data
+@ToString
 public class BlockDbResult {
 
 
