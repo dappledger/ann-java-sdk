@@ -1,7 +1,9 @@
 package com.rendez.api;
 
+import com.rendez.api.bean.rendez.BaseResult;
 import com.rendez.api.blockdb.BlockDbTransaction;
 import com.rendez.api.crypto.PrivateKey;
+import com.rendez.api.crypto.PrivateKeyECDSA;
 import com.rendez.api.crypto.Signature;
 import com.rendez.api.crypto.SignatureECDSA;
 import com.rendez.api.crypto.blockdb.SignedBlockDbTransaction;
@@ -16,6 +18,7 @@ import org.web3j.rlp.RlpString;
 import org.web3j.rlp.RlpType;
 import org.web3j.utils.Bytes;
 
+import java.io.IOException;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
@@ -117,6 +120,25 @@ public class TransactionUtil {
         }
 //        transactionRLP.addAll(result);
         return result;
+    }
+
+
+    /***
+     * 计算hash
+     * @param privateKey
+     * @param value
+     * @return
+     * @throws IOException
+     */
+    public String makeHash(String privateKey, byte[] value) throws IOException {
+        PrivateKey prk = new PrivateKeyECDSA(privateKey);
+        //assemble transaction entity
+        BlockDbTransaction transaction = new BlockDbTransaction(prk.getAddress(), BigInteger.valueOf(System.currentTimeMillis()), value);
+        //signature transaction
+        Signature signature = CryptoUtil.generateBlockSignature(transaction, prk);
+        //encode tx with signature
+        byte[] message = TransactionUtil.encodeWithSig(transaction, signature);
+        return CryptoUtil.txHash(transaction);
     }
 
 }
