@@ -7,6 +7,7 @@ import org.web3j.abi.datatypes.Event;
 import org.web3j.abi.datatypes.Type;
 
 import java.math.BigInteger;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -37,11 +38,13 @@ public abstract class EventCallBack {
     }
 
     final  void handleLogs(TransactionReceipt receipt) {
-        if(receipt.getLogInfoList() != null){
+        if(receipt.getLogInfoList() != null && receipt.getLogInfoList().size()>0){
             receipt.getLogInfoList().forEach(log -> {
                 List<Type> decodeResult = FunctionReturnDecoder.decode(Hex.toHexString(log.getData()), event.getNonIndexedParameters());
                 handleEvent(decodeResult,receipt.getHeight());
             });
+        }else{
+            handleEvent(Arrays.asList(),receipt.getHeight());
         }
     }
 
