@@ -256,8 +256,21 @@ public class NodeSrv {
         return txHash;
     }
 
-
-
+    /**
+     *
+     * 使用签名部署合约
+     *
+     * @param binaryCode 合约二进制编译结果
+     * @param
+     * @param address 用户账户地址
+     * @param nonce
+     * @return contract address 合约地址
+     * @throws IOException
+     */
+    public String deployContractWithSig(String binaryCode, List<Type> constructorParameters, BigInteger nonce, Signature sig, String address,EventCallBack callBack) throws IOException {
+        DeployContractResult deployContractResult = doDeployContract(binaryCode, constructorParameters, nonce, sig, address,callBack);
+        return deployContractResult.getContractAddr();
+    }
 
     /**
      *
@@ -270,18 +283,24 @@ public class NodeSrv {
      * @return contract address 合约地址
      * @throws IOException
      */
-    public String deployContract(String binaryCode, List<Type> constructorParameters, PrivateKey privateKey, BigInteger nonce) throws IOException {
+     public DeployContractResult deployContractCompl(String binaryCode, List<Type> constructorParameters, PrivateKey privateKey, BigInteger nonce,EventCallBack callBack) throws IOException {
         RawTransaction tx = TransactionUtil.createDelopyContractTransaction(binaryCode, constructorParameters, nonce);
         Signature sig = CryptoUtil.generateSignature(tx, privateKey);
-        DeployContractResult res = doDeployContract(binaryCode, constructorParameters, nonce, sig, privateKey.getAddress());
-        return res.getContractAddr();
+        DeployContractResult res = doDeployContract(binaryCode, constructorParameters, nonce, sig, privateKey.getAddress(),callBack);
+        return res;
     }
 
-    public DeployContractResult deployContractCompl(String binaryCode, List<Type> constructorParameters, PrivateKey privateKey, BigInteger nonce) throws IOException {
+    private DeployContractResult doDeployContract(String binaryCode, List<Type> constructorParameters, BigInteger nonce, Signature sig, String address,EventCallBack callBack) throws IOException {
         RawTransaction tx = TransactionUtil.createDelopyContractTransaction(binaryCode, constructorParameters, nonce);
-        Signature sig = CryptoUtil.generateSignature(tx, privateKey);
-        DeployContractResult res = doDeployContract(binaryCode, constructorParameters, nonce, sig, privateKey.getAddress());
-        return res;
+        byte[] message = TransactionUtil.encodeWithSig(tx, sig);
+        String txHash = sendTxToNode(message, false, null);
+        DeployContractResult deployContractResult = new DeployContractResult();
+        deployContractResult.setTxHash(txHash);
+        deployContractResult.setContractAddr(ContractUtils.generateContractAddress(address, nonce));
+        if(null != callBack){
+            sb.onNext(new QueryRecTask(txHash, callBack, this));
+        }
+        return deployContractResult;
     }
 
     /***
@@ -312,34 +331,6 @@ public class NodeSrv {
         return new BlockHashResult();
     }
 
-    /**
-     *
-     * 使用签名部署合约
-     *
-     * @param binaryCode 合约二进制编译结果
-     * @param
-     * @param address 用户账户地址
-     * @param nonce
-     * @return contract address 合约地址
-     * @throws IOException
-     */
-    public String deployContractWithSig(String binaryCode, List<Type> constructorParameters, BigInteger nonce, Signature sig, String address) throws IOException {
-        DeployContractResult deployContractResult = doDeployContract(binaryCode, constructorParameters, nonce, sig, address);
-        return deployContractResult.getContractAddr();
-    }
-
-    private DeployContractResult doDeployContract(String binaryCode, List<Type> constructorParameters, BigInteger nonce, Signature sig, String address) throws IOException {
-        RawTransaction tx = TransactionUtil.createDelopyContractTransaction(binaryCode, constructorParameters, nonce);
-        byte[] message = TransactionUtil.encodeWithSig(tx, sig);
-        String txHash = sendTxToNode(message, false, null);
-        DeployContractResult deployContractResult = new DeployContractResult();
-        deployContractResult.setTxHash(txHash);
-        deployContractResult.setContractAddr(ContractUtils.generateContractAddress(address, nonce));
-        return deployContractResult;
-    }
-
-
-
     private void handleRespCommit(Response<BaseResp<ResultCommit>> httpRes) {
         if (!httpRes.isSuccessful()) {
             throw new BaseException(ErrCode.ERR_NODEAPI, httpRes.raw().toString());
@@ -348,7 +339,7 @@ public class NodeSrv {
             throw new BaseException(ErrCode.ERR_NODEAPI, httpRes.body().getError());
         }
         if (!httpRes.body().getResult().isSuccess()) {
-            throw new BaseException(httpRes.body().getResult().getLog());
+            throw new BaseException(ErrCode.ERR_NO_DATA_FUND,httpRes.body().getResult().getLog());
         }
     }
 
@@ -361,7 +352,7 @@ public class NodeSrv {
             throw new BaseException(ErrCode.ERR_NODEAPI, httpRes.body().getError());
         }
         if (!httpRes.body().getResult().getResult().isSuccess()) {
-            throw new BaseException(httpRes.body().getResult().getResult().getLog());
+            throw new BaseException(ErrCode.ERR_NO_DATA_FUND,httpRes.body().getResult().getResult().getLog());
         }
     }
 }

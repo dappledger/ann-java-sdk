@@ -41,10 +41,10 @@ public abstract class EventCallBack {
         if(receipt.getLogInfoList() != null && receipt.getLogInfoList().size()>0){
             receipt.getLogInfoList().forEach(log -> {
                 List<Type> decodeResult = FunctionReturnDecoder.decode(Hex.toHexString(log.getData()), event.getNonIndexedParameters());
-                handleEvent(decodeResult,receipt.getHeight());
+                handleEvent(decodeResult,receipt.getTxHash());
             });
         }else{
-            handleEvent(Arrays.asList(),receipt.getHeight());
+            handleEvent(Arrays.asList(),receipt.getTxHash());
         }
     }
 
@@ -52,5 +52,5 @@ public abstract class EventCallBack {
      * 具体处理业务逻辑代码
      * @param decodeResult
      */
-    public abstract void handleEvent(List<Type> decodeResult,BigInteger height);
+    public abstract void handleEvent(List<Type> decodeResult,String txHash);
 }

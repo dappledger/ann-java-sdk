@@ -1,6 +1,8 @@
 package com.rendez.api;
 
 
+import com.rendez.api.bean.exception.BaseException;
+import com.rendez.api.bean.exception.ErrCode;
 import io.reactivex.Observer;
 import io.reactivex.disposables.Disposable;
 import lombok.extern.slf4j.Slf4j;
@@ -31,15 +33,11 @@ public class LogObserver implements Observer<QueryRecTask> {
                     task.getEventCallBack().handleLogs(recp);
                     return;
                 }
+                Thread.sleep(Gape);
             } catch (Exception e) {
                 log.warn("LogObserver queryReceipt", e);
             }
 
-            try {
-                // always sleep if receipt not found
-                Thread.sleep(Gape);
-            } catch (InterruptedException ignored) {
-            }
         }
 
         log.warn("time out for task {}", task);

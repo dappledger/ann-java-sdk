@@ -27,6 +27,9 @@ public class TransactionReceipt {
 
     private Transaction transaction;
 
+
+
+    private String txHash;
     private BigInteger height;
     private BigInteger time;
 
@@ -112,7 +115,8 @@ public class TransactionReceipt {
         RLPItem cumulativeGasRLP = (RLPItem) receipt.get(5);
 
         RLPItem bloomRLP = (RLPItem) receipt.get(6);
-        RLPItem txHash = (RLPItem) receipt.get(7);
+        RLPItem txHashRLP = (RLPItem) receipt.get(7);
+        txHash = com.rendez.api.util.ByteUtil.bytesToHex(txHashRLP.getRLPData());
         RLPItem contractAddressRLP = (RLPItem) receipt.get(8);
         contractAddress = com.rendez.api.util.ByteUtil.bytesToHex(contractAddressRLP.getRLPData());
 
@@ -125,7 +129,7 @@ public class TransactionReceipt {
         cumulativeGas = cumulativeGasRLP.getRLPData();
         bloomFilter = new Bloom(bloomRLP.getRLPData());
         gasUsed = gasUsedRLP.getRLPData();
-        executionResult = (executionResult = txHash.getRLPData()) == null ? EMPTY_BYTE_ARRAY : executionResult;
+        executionResult = (executionResult = txHashRLP.getRLPData()) == null ? EMPTY_BYTE_ARRAY : executionResult;
         for (RLPElement log : logs) {
             LogInfo logInfo = new LogInfo(log.getRLPData());
             logInfoList.add(logInfo);
@@ -285,6 +289,13 @@ public class TransactionReceipt {
     public void setExecutionResult(byte[] executionResult) {
         this.executionResult = executionResult;
         rlpEncoded = null;
+    }
+    public String getTxHash() {
+        return txHash;
+    }
+
+    public void setTxHash(String txHash) {
+        this.txHash = txHash;
     }
 
     public void setError(String error) {

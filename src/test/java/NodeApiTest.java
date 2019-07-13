@@ -85,7 +85,7 @@ public class NodeApiTest {
         int nonce = nodeSrv.queryNonce(accountAddress);
         log.info("nonce {}" , nonce);
         //部署合约
-        DeployContractResult deployRes = nodeSrv.deployContractCompl(bCode, Arrays.asList(), privKey, BigInteger.valueOf(nonce));
+        DeployContractResult deployRes = nodeSrv.deployContractCompl(bCode, Arrays.asList(), privKey, BigInteger.valueOf(nonce),null);
         log.info("contractAddr {}",deployRes.getContractAddr());
         log.info("deploy txHash {}",deployRes.getTxHash());
         Thread.sleep(1000);
