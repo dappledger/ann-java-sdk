@@ -109,6 +109,7 @@ public class TransactionUtil {
         result.add(RlpString.create(rawTransaction.getAddress()));
         result.add(RlpString.create(rawTransaction.getTimestamp()));
         result.add(RlpString.create(rawTransaction.getValue()));
+        result.add(RlpString.create(rawTransaction.getOpcode()));
 
         if (sig != null) {
             result.add(RlpString.create(sig.getV()));

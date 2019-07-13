@@ -22,7 +22,7 @@ public class SignedBlockDbTransaction extends BlockDbTransaction {
     private SignatureData signatureData;
 
     public SignedBlockDbTransaction(String address,BigInteger timestamp,byte[] value, SignatureData signatureData) {
-        super(address,timestamp,value);
+        super(address,timestamp,value,(byte)1);
         this.signatureData = signatureData;
     }
 

@@ -1,6 +1,7 @@
 package com.rendez.api;
 
 
+import com.rendez.api.bean.enums.OpEnum;
 import com.rendez.api.bean.exception.BaseException;
 import com.rendez.api.bean.exception.ErrCode;
 import com.rendez.api.bean.model.BlockDbResult;
@@ -57,7 +58,7 @@ public class NodeSrv {
     public String blockdbPuter(String privateKey, byte[] value, boolean isAsyn) throws IOException {
         PrivateKey prk = new PrivateKeyECDSA(privateKey);
         //assemble transaction entity
-        BlockDbTransaction transaction = new BlockDbTransaction(prk.getAddress(), BigInteger.valueOf(System.currentTimeMillis()), value);
+        BlockDbTransaction transaction = new BlockDbTransaction(prk.getAddress(), BigInteger.valueOf(System.currentTimeMillis()), value, OpEnum.PUT.getOpcode());
         //signature transaction
         Signature signature = CryptoUtil.generateBlockSignature(transaction, prk);
         //encode tx with signature
@@ -75,13 +76,21 @@ public class NodeSrv {
      * @return
      * @throws IOException
      */
-    public BlockDbResult blockdbGeter(String txHash) throws IOException {
+    public BlockDbResult blockdbGeter(String privateKey,String txHash) throws IOException {
         if(StringUtils.isEmpty(txHash)){
             log.error("input txHash is empty!");
             return new BlockDbResult();
         }
         txHash = txHash.startsWith("0x")?txHash.substring(2):txHash;
-        BlockdbQueryRequest bqr = new BlockdbQueryRequest("GET",txHash);
+        PrivateKey prk = new PrivateKeyECDSA(privateKey);
+        //assemble transaction entity
+        BlockDbTransaction transaction = new BlockDbTransaction(prk.getAddress(), BigInteger.valueOf(System.currentTimeMillis()), Numeric.hexStringToByteArray(txHash),OpEnum.GET.getOpcode());
+        //signature transaction
+        Signature signature = CryptoUtil.generateBlockSignature(transaction, prk);
+        //encode tx with signature
+        byte[] message = TransactionUtil.encodeWithSig(transaction, signature);
+
+        BlockdbQueryRequest bqr = new BlockdbQueryRequest("GET",Numeric.toHexStringNoPrefix(message));
         BaseRequest request = new BaseRequest("abci_query", bqr);
         Response<BaseResp<ResultABCIQuery>> httpRes = stub.abciquery(request).execute();
         handleRespQuery(httpRes);

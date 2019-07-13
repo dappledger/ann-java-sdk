@@ -54,11 +54,11 @@ public class BlockDbTest {
 
     @Test
     public void Put_Test1() throws Exception {
-        String hash = nodeSrv.blockdbPuter(PRIVATE_KEY, "four bottles fo water1731".getBytes(), true);
+        String hash = nodeSrv.blockdbPuter(PRIVATE_KEY, "four bottles fo water1550".getBytes(), true);
         System.out.println(hash);
         TimeUnit.SECONDS.sleep(5);
 
-        BlockDbResult value = nodeSrv.blockdbGeter(hash);
+        BlockDbResult value = nodeSrv.blockdbGeter(PRIVATE_KEY,hash);
         System.out.println(value);
 
 
@@ -89,7 +89,7 @@ public class BlockDbTest {
 
     @Test
     public void Get_Test1() throws Exception {
-        BlockDbResult hash = nodeSrv.blockdbGeter("0x0d6cfcbee2d5f05c9057eaf098b5f2df8da11b3b59957a5c393cf2ef9865dc09");
+        BlockDbResult hash = nodeSrv.blockdbGeter(PRIVATE_KEY,"527a7fc14ffaaff7f1279faa48eefacd0a9a9ab7f61fd5adb95948bfbb42557d");
         System.out.println(hash);
 
     }
@@ -110,7 +110,7 @@ public class BlockDbTest {
 //        par.setProve(true);
 //
 //        BaseRequest request = new BaseRequest("abci_query", par);
-        BlockHashResult hash = nodeSrv.blockHashs("8253D302C4234300527437D3952FB9A963CAD4EC87E585B541E06962421EE54A");
+        BlockHashResult hash = nodeSrv.blockHashs("8ECBFBE88A82ED06051DDD50AE3723E7AB1BB823DA9924F8A14AB2D59CB08ECC");
         System.out.println(hash);
 
     }

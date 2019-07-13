@@ -1,5 +1,6 @@
 package com.rendez.api.bean.model;
 
+import com.rendez.api.bean.enums.OpEnum;
 import lombok.Data;
 import lombok.ToString;
 
@@ -20,6 +21,7 @@ public class BlockDbResult {
     private BigInteger timestamp;
     private String from;
     private String value;
+    private OpEnum opcode;
     private String txhash;
     //private BigInteger status;
 

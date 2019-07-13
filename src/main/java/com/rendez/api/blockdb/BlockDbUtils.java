@@ -1,8 +1,10 @@
 package com.rendez.api.blockdb;
 
 
+import com.rendez.api.bean.enums.OpEnum;
 import com.rendez.api.bean.model.BlockDbResult;
 
+import com.rendez.api.bean.model.BlockHash;
 import com.rendez.api.bean.model.BlockHashResult;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPItem;
@@ -48,13 +50,13 @@ public class BlockDbUtils {
         RLPItem Value = (RLPItem) firstItem.get(3);
         result.setValue(new String(Value.getRLPData()));
 
-        RLPItem TxHash = (RLPItem) firstItem.get(4);
+        RLPItem OpCode = (RLPItem) firstItem.get(4);
+        byte op = OpCode.getRLPData()[0];
+        result.setOpcode(OpEnum.valueOf(op));
+
+        RLPItem TxHash = (RLPItem) firstItem.get(5);
         String hash = Numeric.toHexString(TxHash.getRLPData());
         result.setTxhash(hash);
-
-//        RLPItem Status = (RLPItem) firstItem.get(4);
-//        BigInteger status = Status.getRLPData().length == 0 ? BigInteger.ZERO : new BigInteger(1, Status.getRLPData());
-//        result.setStatus(status);
 
         return result;
 
@@ -65,10 +67,19 @@ public class BlockDbUtils {
 
         RLPList params = RLP.decode2(origin);
         RLPList txList = (RLPList) params.get(0);
+        BlockHashResult result = new BlockHashResult();
         if (txList.size() > 0) {
-            BlockHashResult result = new BlockHashResult();
-            List<String> txs = new ArrayList<>();
-            txList.forEach(item -> txs.add(com.rendez.api.util.ByteUtil.bytesToHex(item.getRLPData())));
+            List<BlockHash> txs = new ArrayList<>();
+            txList.forEach(hashs ->{
+                BlockHash bh = new BlockHash();
+                RLPItem TxHash = (RLPItem)((RLPList) hashs).get(0);
+                String hash = Numeric.toHexString(TxHash.getRLPData());
+                bh.setTxHash(hash);
+                RLPItem OpCode = (RLPItem) ((RLPList) hashs).get(1);
+                byte op = OpCode.getRLPData()[0];
+                bh.setOp(OpEnum.valueOf(op));
+                txs.add(bh);
+            });
             result.setHashs(txs);
             result.setLength(txs.size());
             return result;

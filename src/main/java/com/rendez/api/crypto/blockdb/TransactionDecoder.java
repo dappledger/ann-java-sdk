@@ -31,7 +31,7 @@ public class TransactionDecoder {
             Sign.SignatureData signatureData = new Sign.SignatureData(v, r, s);
             return new SignedBlockDbTransaction(from, timestamp, value, signatureData);
         } else {
-            return new BlockDbTransaction(from, timestamp, value);
+            return new BlockDbTransaction(from, timestamp, value,(byte)1);
         }
     }
 }
