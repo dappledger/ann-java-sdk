@@ -5,7 +5,9 @@ import com.rendez.api.bean.exception.BaseException;
 import com.rendez.api.bean.exception.ErrCode;
 import com.rendez.api.bean.model.BlockHashResult;
 import com.rendez.api.bean.model.DeployContractResult;
-import com.rendez.api.bean.rendez.*;
+import com.rendez.api.bean.rendez.BaseResp;
+import com.rendez.api.bean.rendez.ResultCommit;
+import com.rendez.api.bean.rendez.ResultQuery;
 import com.rendez.api.crypto.PrivateKey;
 import com.rendez.api.crypto.Signature;
 import io.reactivex.schedulers.Schedulers;
@@ -21,7 +23,8 @@ import org.ethereum.vm.LogInfo;
 import org.web3j.abi.FunctionReturnDecoder;
 import org.web3j.abi.datatypes.Function;
 import org.web3j.abi.datatypes.Type;
-import org.web3j.crypto.*;
+import org.web3j.crypto.ContractUtils;
+import org.web3j.crypto.RawTransaction;
 import org.web3j.rlp.RlpDecoder;
 import org.web3j.rlp.RlpList;
 import org.web3j.rlp.RlpString;
@@ -41,20 +44,50 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 public class NodeSrv {
 
+    private final long readTimeout = 120;
+    private final long connTimeout = 30;
     private Subject<QueryRecTask> sb;
 
     private NodeApi stub;
 
     public NodeSrv(String url) {
         OkHttpClient okClient = new OkHttpClient.Builder()
-                .readTimeout(120, TimeUnit.SECONDS)
-                .connectTimeout(30, TimeUnit.SECONDS)
+                .readTimeout(readTimeout, TimeUnit.SECONDS)
+                .connectTimeout(connTimeout, TimeUnit.SECONDS)
                 .build();
         Retrofit retrofit = new Retrofit.Builder()
                 .baseUrl(url)
                 .addConverterFactory(GsonConverterFactory.create())
                 .client(okClient)
                 .build();
+        stub = retrofit.create(NodeApi.class);
+
+        sb = PublishSubject.create();
+
+        sb.subscribeOn(Schedulers.io()).observeOn(Schedulers.io()).subscribe(new LogObserver());
+    }
+
+    public NodeSrv(String url, long readTimeout, long connTimeout) {
+        OkHttpClient okClient = new OkHttpClient.Builder()
+                .readTimeout(readTimeout > 0 ? readTimeout : readTimeout, TimeUnit.SECONDS)
+                .connectTimeout(connTimeout > 0 ? connTimeout : connTimeout, TimeUnit.SECONDS)
+                .build();
+        Retrofit retrofit = new Retrofit.Builder()
+                .baseUrl(url)
+                .addConverterFactory(GsonConverterFactory.create())
+                .client(okClient)
+                .build();
+        stub = retrofit.create(NodeApi.class);
+
+        sb = PublishSubject.create();
+
+        sb.subscribeOn(Schedulers.io()).observeOn(Schedulers.io()).subscribe(new LogObserver());
+    }
+
+    public NodeSrv(Retrofit retrofit) {
+        if (retrofit == null) {
+            throw new BaseException("NodeSrv init error,retrofit can't be null");
+        }
         stub = retrofit.create(NodeApi.class);
 
         sb = PublishSubject.create();
@@ -84,10 +117,9 @@ public class NodeSrv {
     }
 
     /**
-     *
      * 查询交易执行event log
      *
-     * @param txHash  交易hash
+     * @param txHash 交易hash
      * @return
      * @throws IOException
      */
@@ -101,10 +133,9 @@ public class NodeSrv {
     }
 
     /**
-     *
      * 查询交易执行receipt
      *
-     * @param txHash  交易hash
+     * @param txHash 交易hash
      * @return
      * @throws IOException
      */
@@ -125,14 +156,15 @@ public class NodeSrv {
 
     /**
      * 用秘钥查询合约
+     *
      * @param nonce
      * @param contractAddress 合约地址
-     * @param function  合约方法
-     * @param privateKey 秘钥
+     * @param function        合约方法
+     * @param privateKey      秘钥
      * @return
      * @throws IOException
      */
-    public List<Type> queryContract(BigInteger nonce, String contractAddress, Function function, PrivateKey privateKey) throws IOException{
+    public List<Type> queryContract(BigInteger nonce, String contractAddress, Function function, PrivateKey privateKey) throws IOException {
         RawTransaction tx = TransactionUtil.createCallContractTransaction(nonce, contractAddress, function);
         Signature sig = CryptoUtil.generateSignature(tx, privateKey);
         return queryContractWithSig(nonce, contractAddress, function, sig);
@@ -140,10 +172,11 @@ public class NodeSrv {
 
     /**
      * 签名查询合约
+     *
      * @param nonce
      * @param contractAddress 合约地址
-     * @param function  合约方法
-     * @param sig 签名
+     * @param function        合约方法
+     * @param sig             签名
      * @return
      * @throws IOException
      */
@@ -155,7 +188,7 @@ public class NodeSrv {
         handleRespQuery(httpRes);
         BaseResp<ResultQuery> resp = httpRes.body();
         if (resp.getResult().getResult().getData() != null) {
-            String respData =  resp.getResult().getResult().getData();
+            String respData = resp.getResult().getResult().getData();
             byte[] rlpEncoded = Numeric.hexStringToByteArray(respData);
             List<Type> someTypes = FunctionReturnDecoder.decode(
                     Numeric.toHexString(rlpEncoded), function.getOutputParameters());
@@ -166,12 +199,11 @@ public class NodeSrv {
     }
 
     /**
-     *
      * 调用evm 合约
      *
      * @param nonce
-     * @param contractAddress  合约地址
-     * @param function 合约函数定义
+     * @param contractAddress 合约地址
+     * @param function        合约函数定义
      * @param privateKey
      * @return 交易hash
      * @throws IOException
@@ -187,19 +219,18 @@ public class NodeSrv {
     }
 
     /**
-     *
      * 调用evm 合约
      *
-     * @param nonce nonce
+     * @param nonce           nonce
      * @param contractAddress 合约地址
-     * @param function 函数定义
-     * @param privateKey 秘钥
-     * @param callBack 回调函数
-     * @param isSyncCall 是否同步调用
+     * @param function        函数定义
+     * @param privateKey      秘钥
+     * @param callBack        回调函数
+     * @param isSyncCall      是否同步调用
      * @return txHash 交易哈希
      * @throws IOException
      */
-    public String callContractEvm(BigInteger nonce, String contractAddress, Function function, PrivateKey privateKey, EventCallBack callBack, boolean isSyncCall) throws IOException{
+    public String callContractEvm(BigInteger nonce, String contractAddress, Function function, PrivateKey privateKey, EventCallBack callBack, boolean isSyncCall) throws IOException {
         RawTransaction tx = TransactionUtil.createCallContractTransaction(nonce, contractAddress, function);
         Signature sig = CryptoUtil.generateSignature(tx, privateKey);
         return callContractEvmWithSig(nonce, contractAddress, function, sig, callBack, isSyncCall);
@@ -212,15 +243,14 @@ public class NodeSrv {
     }
 
     /**
-     *
      * 使用生成好的签名调用evm 合约
      *
-     * @param nonce nonce
+     * @param nonce           nonce
      * @param contractAddress 合约地址
-     * @param function 函数定义
-     * @param sig 交易签名
-     * @param callBack 回调函数
-     * @param isSyncCall 是否同步调用
+     * @param function        函数定义
+     * @param sig             交易签名
+     * @param callBack        回调函数
+     * @param isSyncCall      是否同步调用
      * @return txHash 交易哈希
      * @throws IOException
      */
@@ -235,17 +265,18 @@ public class NodeSrv {
     /**
      * 将序列化好的交易广播到链节点
      * broadcast signed and serialized tx to node rpc
-     * @param txMessage 交易（签名并序列化完成）
+     *
+     * @param txMessage  交易（签名并序列化完成）
      * @param isSyncCall 同步/异步上链
-     * @param callBack 回调
+     * @param callBack   回调
      * @return
      * @throws IOException
      */
     public String sendTxToNode(byte[] txMessage, boolean isSyncCall, EventCallBack callBack) throws IOException {
         Response<BaseResp<ResultCommit>> httpRes;
-        if (isSyncCall){
+        if (isSyncCall) {
             httpRes = stub.broadcastTxCommit(Numeric.toHexString(txMessage)).execute();
-        }else {
+        } else {
             httpRes = stub.broadcastTxAsync(Numeric.toHexString(txMessage)).execute();
         }
         handleRespCommit(httpRes);
@@ -257,23 +288,21 @@ public class NodeSrv {
     }
 
     /**
-     *
      * 使用签名部署合约
      *
      * @param binaryCode 合约二进制编译结果
      * @param
-     * @param address 用户账户地址
+     * @param address    用户账户地址
      * @param nonce
      * @return contract address 合约地址
      * @throws IOException
      */
-    public String deployContractWithSig(String binaryCode, List<Type> constructorParameters, BigInteger nonce, Signature sig, String address,EventCallBack callBack) throws IOException {
-        DeployContractResult deployContractResult = doDeployContract(binaryCode, constructorParameters, nonce, sig, address,callBack);
+    public String deployContractWithSig(String binaryCode, List<Type> constructorParameters, BigInteger nonce, Signature sig, String address, EventCallBack callBack) throws IOException {
+        DeployContractResult deployContractResult = doDeployContract(binaryCode, constructorParameters, nonce, sig, address, callBack);
         return deployContractResult.getContractAddr();
     }
 
     /**
-     *
      * 使用私钥部署合约
      *
      * @param binaryCode 合约二进制编译结果
@@ -283,21 +312,21 @@ public class NodeSrv {
      * @return contract address 合约地址
      * @throws IOException
      */
-     public DeployContractResult deployContractCompl(String binaryCode, List<Type> constructorParameters, PrivateKey privateKey, BigInteger nonce,EventCallBack callBack) throws IOException {
+    public DeployContractResult deployContractCompl(String binaryCode, List<Type> constructorParameters, PrivateKey privateKey, BigInteger nonce, EventCallBack callBack) throws IOException {
         RawTransaction tx = TransactionUtil.createDelopyContractTransaction(binaryCode, constructorParameters, nonce);
         Signature sig = CryptoUtil.generateSignature(tx, privateKey);
-        DeployContractResult res = doDeployContract(binaryCode, constructorParameters, nonce, sig, privateKey.getAddress(),callBack);
+        DeployContractResult res = doDeployContract(binaryCode, constructorParameters, nonce, sig, privateKey.getAddress(), callBack);
         return res;
     }
 
-    private DeployContractResult doDeployContract(String binaryCode, List<Type> constructorParameters, BigInteger nonce, Signature sig, String address,EventCallBack callBack) throws IOException {
+    private DeployContractResult doDeployContract(String binaryCode, List<Type> constructorParameters, BigInteger nonce, Signature sig, String address, EventCallBack callBack) throws IOException {
         RawTransaction tx = TransactionUtil.createDelopyContractTransaction(binaryCode, constructorParameters, nonce);
         byte[] message = TransactionUtil.encodeWithSig(tx, sig);
         String txHash = sendTxToNode(message, false, null);
         DeployContractResult deployContractResult = new DeployContractResult();
         deployContractResult.setTxHash(txHash);
         deployContractResult.setContractAddr(ContractUtils.generateContractAddress(address, nonce));
-        if(null != callBack){
+        if (null != callBack) {
             sb.onNext(new QueryRecTask(txHash, callBack, this));
         }
         return deployContractResult;
@@ -319,7 +348,7 @@ public class NodeSrv {
             byte[] rlp = Numeric.hexStringToByteArray(resp.getResult().getResult().getData());
             RLPList params = RLP.decode2(rlp);
             RLPList txList = (RLPList) params.get(0);
-            if(txList.size()>0){
+            if (txList.size() > 0) {
                 BlockHashResult result = new BlockHashResult();
                 List<String> txs = new ArrayList<>();
                 txList.forEach(item -> txs.add(com.rendez.api.util.ByteUtil.bytesToHex(item.getRLPData())));
@@ -339,7 +368,7 @@ public class NodeSrv {
             throw new BaseException(ErrCode.ERR_NODEAPI, httpRes.body().getError());
         }
         if (!httpRes.body().getResult().isSuccess()) {
-            throw new BaseException(ErrCode.ERR_NO_DATA_FUND,httpRes.body().getResult().getLog());
+            throw new BaseException(ErrCode.ERR_NO_DATA_FUND, httpRes.body().getResult().getLog());
         }
     }
 
@@ -352,7 +381,7 @@ public class NodeSrv {
             throw new BaseException(ErrCode.ERR_NODEAPI, httpRes.body().getError());
         }
         if (!httpRes.body().getResult().getResult().isSuccess()) {
-            throw new BaseException(ErrCode.ERR_NO_DATA_FUND,httpRes.body().getResult().getResult().getLog());
+            throw new BaseException(ErrCode.ERR_NO_DATA_FUND, httpRes.body().getResult().getResult().getLog());
         }
     }
 }
