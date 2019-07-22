@@ -110,20 +110,23 @@ public class TransactionReceipt {
         RLPItem toRLP = (RLPItem) receipt.get(3);
         to = com.rendez.api.util.ByteUtil.bytesToHex(toRLP.getRLPData());
 
-        RLPItem postTxStateRLP = (RLPItem) receipt.get(4);
+        // return data
+        RLPItem returnRLP = (RLPItem) receipt.get(4);
 
-        RLPItem cumulativeGasRLP = (RLPItem) receipt.get(5);
+        RLPItem postTxStateRLP = (RLPItem) receipt.get(5);
 
-        RLPItem bloomRLP = (RLPItem) receipt.get(6);
-        RLPItem txHashRLP = (RLPItem) receipt.get(7);
+        RLPItem cumulativeGasRLP = (RLPItem) receipt.get(6);
+
+        RLPItem bloomRLP = (RLPItem) receipt.get(7);
+        RLPItem txHashRLP = (RLPItem) receipt.get(8);
         txHash = com.rendez.api.util.ByteUtil.bytesToHex(txHashRLP.getRLPData());
-        RLPItem contractAddressRLP = (RLPItem) receipt.get(8);
+        RLPItem contractAddressRLP = (RLPItem) receipt.get(9);
         contractAddress = com.rendez.api.util.ByteUtil.bytesToHex(contractAddressRLP.getRLPData());
 
-        RLPList logs = (RLPList) receipt.get(9);
-        RLPItem gasUsedRLP = (RLPItem) receipt.get(10);
+        RLPList logs = (RLPList) receipt.get(10);
+        RLPItem gasUsedRLP = (RLPItem) receipt.get(11);
 
-        RLPItem statusRLP = (RLPItem) receipt.get(11);
+        RLPItem statusRLP = (RLPItem) receipt.get(12);
 
         postTxState = nullToEmpty(postTxStateRLP.getRLPData());
         cumulativeGas = cumulativeGasRLP.getRLPData();

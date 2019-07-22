@@ -6,7 +6,7 @@
 
     <groupId>com.za.rendez.sdk</groupId>
     <artifactId>sdk</artifactId>
-    <version>1.2.5-SNAPSHOT</version>
+    <version>1.2.6-SNAPSHOT</version>
     <properties>
         <web3j.version>4.2.0</web3j.version>
         <maven.test.skip>true</maven.test.skip>
