@@ -49,7 +49,7 @@ public class NodeApiTest {
 
     @BeforeClass
     public static void init() throws IOException{
-        nodeSrv = new NodeSrv("http://localhost:46657");
+        nodeSrv = new NodeSrv("https://zt-scf-chain.zaouter.com");
 //        // 初始化contractAddress existTxHash
 //        String accountAddress = privKey.getAddress();
 //        //获取nonce
@@ -117,63 +117,63 @@ public class NodeApiTest {
         log.info("resp {}", resp);
     }
 
-    @Test
-    public void testCallContactWithSig() throws IOException, InterruptedException{
-        String address = privKey.getAddress();
-        int nonce = nodeSrv.queryNonce(address);
-        log.info("nonce {}" , nonce);
+//    @Test
+//    public void testCallContactWithSig() throws IOException, InterruptedException{
+//        String address = privKey.getAddress();
+//        int nonce = nodeSrv.queryNonce(address);
+//        log.info("nonce {}" , nonce);
+//
+//        // event 定义
+//        Event DEPOSIT = new Event("Deposit",
+//                Arrays.asList(),
+//                Arrays.asList(new TypeReference<Address>() {
+//                }, new TypeReference<Address>() {
+//                }, new TypeReference<Utf8String>() {
+//                }));
+//
+//        Function functionDef = new Function("deposit", Arrays.asList(), Arrays.asList());
+//        RawTransaction tx = TransactionUtil.createCallContractTransaction(BigInteger.valueOf(nonce), contractAddress, functionDef);
+//        Signature sig = CryptoUtil.generateSignature(tx, privKey);
+//        String resp = nodeSrv.callContractEvmWithSig(BigInteger.valueOf(nonce),
+//                contractAddress,
+//                functionDef, //函数接口定义
+//                sig,
+//                new DemoEventCallBack(DEPOSIT)); //callBack
+//
+//        log.info("call contract resp:" + resp);
+//
+//        Thread.sleep(5000);
+//    }
 
-        // event 定义
-        Event DEPOSIT = new Event("Deposit",
-                Arrays.asList(),
-                Arrays.asList(new TypeReference<Address>() {
-                }, new TypeReference<Address>() {
-                }, new TypeReference<Utf8String>() {
-                }));
 
-        Function functionDef = new Function("deposit", Arrays.asList(), Arrays.asList());
-        RawTransaction tx = TransactionUtil.createCallContractTransaction(BigInteger.valueOf(nonce), contractAddress, functionDef);
-        Signature sig = CryptoUtil.generateSignature(tx, privKey);
-        String resp = nodeSrv.callContractEvmWithSig(BigInteger.valueOf(nonce),
-                contractAddress,
-                functionDef, //函数接口定义
-                sig,
-                new DemoEventCallBack(DEPOSIT)); //callBack
-
-        log.info("call contract resp:" + resp);
-
-        Thread.sleep(5000);
-    }
-
-
-    @Test
-    public void testCallContactAsync() throws IOException, InterruptedException{
-
-        /*
-          参考test.sol
-         */
-        String address = privKey.getAddress();
-        int nonce = nodeSrv.queryNonce(address);
-        log.info("nonce {}" , nonce);
-
-        // event 定义
-        Event DEPOSIT = new Event("Deposit",
-                Arrays.asList(),
-                Arrays.asList(new TypeReference<Address>() {
-                }, new TypeReference<Address>() {
-                }, new TypeReference<Utf8String>() {
-                }));
-
-        Function functionDef = new Function("deposit", Arrays.asList(), Arrays.asList());
-
-        String resp = nodeSrv.callContractEvm(BigInteger.valueOf(nonce),
-                contractAddress,
-                functionDef, //函数接口定义
-                privKey,
-                new DemoEventCallBack(DEPOSIT), false); //callBack
-        log.info("abc" + resp);
-        Thread.sleep(10000);
-    }
+//    @Test
+//    public void testCallContactAsync() throws IOException, InterruptedException{
+//
+//        /*
+//          参考test.sol
+//         */
+//        String address = privKey.getAddress();
+//        int nonce = nodeSrv.queryNonce(address);
+//        log.info("nonce {}" , nonce);
+//
+//        // event 定义
+//        Event DEPOSIT = new Event("Deposit",
+//                Arrays.asList(),
+//                Arrays.asList(new TypeReference<Address>() {
+//                }, new TypeReference<Address>() {
+//                }, new TypeReference<Utf8String>() {
+//                }));
+//
+//        Function functionDef = new Function("deposit", Arrays.asList(), Arrays.asList());
+//
+//        String resp = nodeSrv.callContractEvm(BigInteger.valueOf(nonce),
+//                contractAddress,
+//                functionDef, //函数接口定义
+//                privKey,
+//                new DemoEventCallBack(DEPOSIT), false); //callBack
+//        log.info("abc" + resp);
+//        Thread.sleep(10000);
+//    }
 
 
 
@@ -201,7 +201,7 @@ public class NodeApiTest {
 
     @Test
     public void hashDemo() throws Exception {
-        BlockHashResult hashs = nodeSrv.blockHashs("E54C26ECEF3EAD746C6B3F4433B642049A383326");
+        BlockHashResult hashs = nodeSrv.blockHashs("AD763E0B5FFFD93CAB9B5C7C70FB56B8C5122CD5");
         System.out.println(hashs);
     }
 
