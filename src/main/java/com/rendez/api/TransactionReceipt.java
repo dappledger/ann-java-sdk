@@ -100,10 +100,10 @@ public class TransactionReceipt {
         RLPList receipt = (RLPList) params.get(0);
 
         RLPItem heightRLP = (RLPItem) receipt.get(0);
-        height = new BigInteger(fixByte(heightRLP.getRLPData()));
+        height = new BigInteger(1,heightRLP.getRLPData());
 
         RLPItem timestampRLP = (RLPItem) receipt.get(1);
-        time = new BigInteger(fixByte(timestampRLP.getRLPData()));
+        time = new BigInteger(1,timestampRLP.getRLPData());
 
         RLPItem fromRLP = (RLPItem) receipt.get(2);
         from = com.rendez.api.util.ByteUtil.bytesToHex(fromRLP.getRLPData());
