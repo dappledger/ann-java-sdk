@@ -36,12 +36,12 @@ public interface NodeApi {
     @GET("query")
     Call<BaseResp<ResultQuery>> query(@Query("query") String query);
 
-//    /**
-//     * 查询交易
-//     * @param query
-//     * @return
-//     */
-//    @GET("query")
-//    Call<BaseResp<ResultQuery>> query(@Query("query") String query);
+    /**
+     * 查询交易
+     * @param query
+     * @return
+     */
+    @GET("transaction")
+    Call<BaseResp<ResultQuery>> transaction(@Query("tx") String query);
 
 }

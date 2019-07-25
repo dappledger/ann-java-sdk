@@ -6,7 +6,8 @@ public enum QueryType {
     Contract("0"),
     Nonce("1"),
     Receipt("3"),
-    BlockHashs("10");
+    BlockHashs("10"),
+    Transaction("62");
 
     QueryType(String code) {
         this.code = new Byte(code);

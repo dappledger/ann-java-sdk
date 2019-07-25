@@ -18,13 +18,13 @@ import lombok.extern.slf4j.Slf4j;
 import okhttp3.OkHttpClient;
 import org.apache.commons.lang.StringUtils;
 import org.ethereum.util.RLP;
+import org.ethereum.util.RLPItem;
 import org.ethereum.util.RLPList;
 import org.ethereum.vm.LogInfo;
 import org.web3j.abi.FunctionReturnDecoder;
 import org.web3j.abi.datatypes.Function;
 import org.web3j.abi.datatypes.Type;
-import org.web3j.crypto.ContractUtils;
-import org.web3j.crypto.RawTransaction;
+import org.web3j.crypto.*;
 import org.web3j.rlp.RlpDecoder;
 import org.web3j.rlp.RlpList;
 import org.web3j.rlp.RlpString;
@@ -123,7 +123,7 @@ public class NodeSrv {
      * @return
      * @throws IOException
      */
-    public List<LogInfo> queryReceipt(String txHash) throws IOException {
+    public List<LogInfo> queryReceipt(String txHash) throws Exception {
         TransactionReceipt receipt = queryReceiptRaw(txHash);
         if (receipt != null) {
             return receipt.getLogInfoList();
@@ -139,7 +139,7 @@ public class NodeSrv {
      * @return
      * @throws IOException
      */
-    public TransactionReceipt queryReceiptRaw(String txHash) throws IOException {
+    public TransactionReceipt queryReceiptRaw(String txHash) throws Exception {
         Response<BaseResp<ResultQuery>> httpRes = stub.query(QueryType.Receipt.padd(txHash)).execute();
         handleRespQuery(httpRes);
         BaseResp<ResultQuery> resp = httpRes.body();
@@ -147,9 +147,35 @@ public class NodeSrv {
         if (resp.getResult().getResult().getData() != null) {
             byte[] rlp = Numeric.hexStringToByteArray(resp.getResult().getResult().getData());
             TransactionReceipt res = new TransactionReceipt(rlp);
+            queryTxAttach(txHash,res);
             return res;
         } else {
             return null;
+        }
+    }
+
+
+    public void queryTxAttach(String tx,TransactionReceipt receipt) throws Exception {
+        Response<BaseResp<ResultQuery>> httpRes = stub.transaction(tx).execute();
+        handleRespQuery(httpRes);
+        BaseResp<ResultQuery> resp = httpRes.body();
+
+        if (resp.getResult().getResult().getData() != null) {
+            byte[] rlp = Numeric.hexStringToByteArray(resp.getResult().getResult().getData());
+            RLPList params = RLP.decode2(rlp);
+            RLPList txList = (RLPList) params.get(0);
+
+            RLPItem heightRLP = (RLPItem) txList.get(1);
+            receipt.setHeight(new BigInteger(1,heightRLP.getRLPData()));
+
+            RLPItem timeRLP = (RLPItem) txList.get(4);
+            receipt.setTime(new BigInteger(1,timeRLP.getRLPData()));
+            RLPItem txRLP = (RLPItem) txList.get(3);
+            RawTransaction res = TransactionDecoder.decode(Numeric.toHexString(txRLP.getRLPData()));
+            if(res instanceof SignedRawTransaction){
+                receipt.setFrom(((SignedRawTransaction)res).getFrom());
+                receipt.setTo(((SignedRawTransaction)res).getTo());
+            }
         }
     }
 

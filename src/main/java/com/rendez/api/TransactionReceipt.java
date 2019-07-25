@@ -1,5 +1,6 @@
 package com.rendez.api;
 
+import lombok.Data;
 import org.ethereum.core.Bloom;
 import org.ethereum.core.Transaction;
 import org.ethereum.util.*;
@@ -26,8 +27,6 @@ import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 public class TransactionReceipt {
 
     private Transaction transaction;
-
-
 
     private String txHash;
     private BigInteger height;
@@ -99,31 +98,31 @@ public class TransactionReceipt {
         RLPList params = RLP.decode2(rlp);
         RLPList receipt = (RLPList) params.get(0);
 
-        RLPItem heightRLP = (RLPItem) receipt.get(0);
-        height = new BigInteger(1,heightRLP.getRLPData());
+//        RLPItem heightRLP = (RLPItem) receipt.get(0);
+//        height = new BigInteger(1,heightRLP.getRLPData());
+//
+//        RLPItem timestampRLP = (RLPItem) receipt.get(1);
+//        time = new BigInteger(1,timestampRLP.getRLPData());
+//
+//        RLPItem fromRLP = (RLPItem) receipt.get(2);
+//        from = com.rendez.api.util.ByteUtil.bytesToHex(fromRLP.getRLPData());
+//        RLPItem toRLP = (RLPItem) receipt.get(3);
+//        to = com.rendez.api.util.ByteUtil.bytesToHex(toRLP.getRLPData());
 
-        RLPItem timestampRLP = (RLPItem) receipt.get(1);
-        time = new BigInteger(1,timestampRLP.getRLPData());
+        RLPItem postTxStateRLP = (RLPItem) receipt.get(0);
 
-        RLPItem fromRLP = (RLPItem) receipt.get(2);
-        from = com.rendez.api.util.ByteUtil.bytesToHex(fromRLP.getRLPData());
-        RLPItem toRLP = (RLPItem) receipt.get(3);
-        to = com.rendez.api.util.ByteUtil.bytesToHex(toRLP.getRLPData());
+        RLPItem cumulativeGasRLP = (RLPItem) receipt.get(1);
 
-        RLPItem postTxStateRLP = (RLPItem) receipt.get(4);
-
-        RLPItem cumulativeGasRLP = (RLPItem) receipt.get(5);
-
-        RLPItem bloomRLP = (RLPItem) receipt.get(6);
-        RLPItem txHashRLP = (RLPItem) receipt.get(7);
+        RLPItem bloomRLP = (RLPItem) receipt.get(2);
+        RLPItem txHashRLP = (RLPItem) receipt.get(3);
         txHash = com.rendez.api.util.ByteUtil.bytesToHex(txHashRLP.getRLPData());
-        RLPItem contractAddressRLP = (RLPItem) receipt.get(8);
+        RLPItem contractAddressRLP = (RLPItem) receipt.get(4);
         contractAddress = com.rendez.api.util.ByteUtil.bytesToHex(contractAddressRLP.getRLPData());
 
-        RLPList logs = (RLPList) receipt.get(9);
-        RLPItem gasUsedRLP = (RLPItem) receipt.get(10);
+        RLPList logs = (RLPList) receipt.get(5);
+        RLPItem gasUsedRLP = (RLPItem) receipt.get(6);
 
-        RLPItem statusRLP = (RLPItem) receipt.get(11);
+        //RLPItem statusRLP = (RLPItem) receipt.get(11);
 
         postTxState = nullToEmpty(postTxStateRLP.getRLPData());
         cumulativeGas = cumulativeGasRLP.getRLPData();
@@ -342,6 +341,15 @@ public class TransactionReceipt {
                 "\n  , bloom=" + bloomFilter.toString() +
                 "\n  , logs=" + logInfoList +
                 ']';
+    }
+
+
+    @Data
+    static class ReceiptAttach{
+        private String from;
+        private String to;
+        private BigInteger height;
+        private BigInteger time;
     }
 
 }

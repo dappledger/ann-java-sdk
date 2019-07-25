@@ -49,7 +49,7 @@ public class NodeApiTest {
 
     @BeforeClass
     public static void init() throws IOException{
-        nodeSrv = new NodeSrv("https://zt-scf-chain.zaouter.com");
+        nodeSrv = new NodeSrv("http://127.0.0.1:46657");
 //        // 初始化contractAddress existTxHash
 //        String accountAddress = privKey.getAddress();
 //        //获取nonce
@@ -76,6 +76,12 @@ public class NodeApiTest {
 //        log.info("txHash {}" ,existTxHash);
     }
 
+    @Test
+    public void receipt() throws Exception {
+        TransactionReceipt receipt = nodeSrv.queryReceiptRaw("0x3dc0d5cd7283ca3b1e820910c538a6f01e298d105c24d338a401c45b8eb9f7c2");
+        log.info("aaa{}",receipt);
+
+    }
 
 
     @Test
@@ -88,7 +94,7 @@ public class NodeApiTest {
         DeployContractResult deployRes = nodeSrv.deployContractCompl(bCode, Arrays.asList(), privKey, BigInteger.valueOf(nonce),null);
         log.info("contractAddr {}",deployRes.getContractAddr());
         log.info("deploy txHash {}",deployRes.getTxHash());
-        Thread.sleep(1000);
+        Thread.sleep(3000);
     }
 
 
@@ -186,7 +192,7 @@ public class NodeApiTest {
     }
 
     @Test
-    public void testQueryRecp() throws IOException {
+    public void testQueryRecp() throws Exception {
         List<LogInfo> resp = nodeSrv.queryReceipt(existTxHash);
         Assert.assertNotNull(resp);
         log.info("" + resp);
