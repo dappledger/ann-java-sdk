@@ -85,6 +85,14 @@ public class NodeApiTest {
 
 
     @Test
+    public void hegiht() throws Exception {
+        BlockHashResult receipt = nodeSrv.blockHashs(113L);
+        log.info("aaa{}",receipt);
+
+    }
+
+
+    @Test
     public void testDeployContract() throws IOException, InterruptedException {
         String accountAddress = privKey.getAddress();
         //获取nonce
@@ -207,7 +215,7 @@ public class NodeApiTest {
 
     @Test
     public void hashDemo() throws Exception {
-        BlockHashResult hashs = nodeSrv.blockHashs("AD763E0B5FFFD93CAB9B5C7C70FB56B8C5122CD5");
+        BlockHashResult hashs = nodeSrv.blockHashs(123L);
         System.out.println(hashs);
     }
 

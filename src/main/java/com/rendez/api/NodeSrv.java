@@ -1,6 +1,8 @@
 package com.rendez.api;
 
 
+import com.alibaba.fastjson.JSONArray;
+import com.alibaba.fastjson.JSONObject;
 import com.rendez.api.bean.exception.BaseException;
 import com.rendez.api.bean.exception.ErrCode;
 import com.rendez.api.bean.model.BlockHashResult;
@@ -24,7 +26,10 @@ import org.ethereum.vm.LogInfo;
 import org.web3j.abi.FunctionReturnDecoder;
 import org.web3j.abi.datatypes.Function;
 import org.web3j.abi.datatypes.Type;
-import org.web3j.crypto.*;
+import org.web3j.crypto.ContractUtils;
+import org.web3j.crypto.RawTransaction;
+import org.web3j.crypto.SignedRawTransaction;
+import org.web3j.crypto.TransactionDecoder;
 import org.web3j.rlp.RlpDecoder;
 import org.web3j.rlp.RlpList;
 import org.web3j.rlp.RlpString;
@@ -147,7 +152,7 @@ public class NodeSrv {
         if (resp.getResult().getResult().getData() != null) {
             byte[] rlp = Numeric.hexStringToByteArray(resp.getResult().getResult().getData());
             TransactionReceipt res = new TransactionReceipt(rlp);
-            queryTxAttach(txHash,res);
+            queryTxAttach(txHash, res);
             return res;
         } else {
             return null;
@@ -155,7 +160,7 @@ public class NodeSrv {
     }
 
 
-    public void queryTxAttach(String tx,TransactionReceipt receipt) throws Exception {
+    public void queryTxAttach(String tx, TransactionReceipt receipt) throws Exception {
         Response<BaseResp<ResultQuery>> httpRes = stub.transaction(tx).execute();
         handleRespQuery(httpRes);
         BaseResp<ResultQuery> resp = httpRes.body();
@@ -166,15 +171,15 @@ public class NodeSrv {
             RLPList txList = (RLPList) params.get(0);
 
             RLPItem heightRLP = (RLPItem) txList.get(1);
-            receipt.setHeight(new BigInteger(1,heightRLP.getRLPData()));
+            receipt.setHeight(new BigInteger(1, heightRLP.getRLPData()));
 
             RLPItem timeRLP = (RLPItem) txList.get(4);
-            receipt.setTime(new BigInteger(1,timeRLP.getRLPData()));
+            receipt.setTime(new BigInteger(1, timeRLP.getRLPData()));
             RLPItem txRLP = (RLPItem) txList.get(3);
             RawTransaction res = TransactionDecoder.decode(Numeric.toHexString(txRLP.getRLPData()));
-            if(res instanceof SignedRawTransaction){
-                receipt.setFrom(((SignedRawTransaction)res).getFrom());
-                receipt.setTo(((SignedRawTransaction)res).getTo());
+            if (res instanceof SignedRawTransaction) {
+                receipt.setFrom(((SignedRawTransaction) res).getFrom());
+                receipt.setTo(res.getTo());
             }
         }
     }
@@ -361,29 +366,43 @@ public class NodeSrv {
     /***
      * 通过块hash查询块上有效交易列表
      *
-     * @param blockHash
+     * @param height
      * @return
      * @throws Exception
      */
-    public BlockHashResult blockHashs(String blockHash) throws Exception {
-        Response<BaseResp<ResultQuery>> httpRes = stub.query(QueryType.BlockHashs.padd(blockHash)).execute();
-        handleRespQuery(httpRes);
-        BaseResp<ResultQuery> resp = httpRes.body();
-        log.debug(resp.toString());
-        if (resp.getResult().getResult().getData() != null) {
-            byte[] rlp = Numeric.hexStringToByteArray(resp.getResult().getResult().getData());
-            RLPList params = RLP.decode2(rlp);
-            RLPList txList = (RLPList) params.get(0);
-            if (txList.size() > 0) {
-                BlockHashResult result = new BlockHashResult();
-                List<String> txs = new ArrayList<>();
-                txList.forEach(item -> txs.add(com.rendez.api.util.ByteUtil.bytesToHex(item.getRLPData())));
-                result.setHashs(txs);
-                result.setLength(txs.size());
-                return result;
-            }
+    public BlockHashResult blockHashs(Long height) throws Exception {
+        Response<BaseResp<JSONObject>> httpRes = stub.height(height).execute();
+        if (!httpRes.isSuccessful()) {
+            throw new BaseException(ErrCode.ERR_NODEAPI, httpRes.raw().toString());
         }
-        return new BlockHashResult();
+
+        JSONObject block = httpRes.body().getResult();
+        JSONObject block_meta = block.getJSONObject("block_meta");
+        int num_txs = block_meta.getJSONObject("header").getInteger("num_txs");
+
+        JSONArray txs = block.getJSONObject("block").getJSONObject("data").getJSONArray("txs");
+        JSONArray extxs = block.getJSONObject("block").getJSONObject("data").getJSONArray("extxs");
+
+        if (num_txs != txs.size() + extxs.size()) {
+            throw new BaseException(ErrCode.ERR_NODEAPI, httpRes.body().getError());
+        }
+
+        List<String> txHashs = new ArrayList<>();
+
+        for (int i = 0; i < txs.size(); i++) {
+            String hash = CryptoUtil.txHash(Numeric.hexStringToByteArray(txs.get(i).toString()));
+            txHashs.add(hash);
+        }
+
+        for (int i = 0; i < extxs.size(); i++) {
+            String hash = CryptoUtil.txHash(Numeric.hexStringToByteArray(extxs.get(i).toString()));
+            txHashs.add(hash);
+        }
+
+        BlockHashResult result = new BlockHashResult();
+        result.setHashs(txHashs);
+        result.setLength(num_txs);
+        return result;
     }
 
     private void handleRespCommit(Response<BaseResp<ResultCommit>> httpRes) {
