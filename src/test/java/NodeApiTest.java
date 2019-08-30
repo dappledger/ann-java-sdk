@@ -1,14 +1,16 @@
 
-import com.rendez.api.CryptoUtil;
-import com.rendez.api.NodeSrv;
-import com.rendez.api.TransactionReceipt;
-import com.rendez.api.TransactionUtil;
-import com.rendez.api.bean.model.BlockHashResult;
-import com.rendez.api.bean.model.DeployContractResult;
-import com.rendez.api.crypto.PrivateKey;
-import com.rendez.api.crypto.PrivateKeyECDSA;
-import com.rendez.api.crypto.Signature;
+import com.genesis.api.CryptoUtil;
+import com.genesis.api.NodeSrv;
+import com.genesis.api.RawTransactionData;
+import com.genesis.api.TransactionHashs;
+import com.genesis.api.TransactionReceipt;
+import com.genesis.api.TransactionUtil;
+import com.genesis.api.bean.model.DeployContractResult;
+import com.genesis.api.crypto.PrivateKey;
+import com.genesis.api.crypto.PrivateKeyECDSA;
+import com.genesis.api.crypto.Signature;
 import lombok.extern.slf4j.Slf4j;
+import org.bouncycastle.crypto.CryptoException;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.vm.LogInfo;
 import org.junit.Assert;
@@ -24,6 +26,7 @@ import org.web3j.utils.Numeric;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.util.Arrays;
+import java.util.LinkedList;
 import java.util.List;
 
 
@@ -34,12 +37,12 @@ public class NodeApiTest {
     private static final String bCode = "608060405234801561001057600080fd5b506101c3806100206000396000f30060806040526004361061004b5763ffffffff7c01000000000000000000000000000000000000000000000000000000006000350416632c560ec08114610050578063d0e30db0146100da575b600080fd5b34801561005c57600080fd5b506100656100f1565b6040805160208082528351818301528351919283929083019185019080838360005b8381101561009f578181015183820152602001610087565b50505050905090810190601f1680156100cc5780820380516001836020036101000a031916815260200191505b509250505060405180910390f35b3480156100e657600080fd5b506100ef610128565b005b60408051808201909152600481527f6162636400000000000000000000000000000000000000000000000000000000602082015290565b6040805133808252602082015260608183018190526003908201527f6162630000000000000000000000000000000000000000000000000000000000608082015290517f4db2efd59f3e5a97173b6b255ce6ebaea50d7f27654cf39705afa269e2529b3a9181900360a00190a15600a165627a7a7230582042b1e64c23be2b8da97983a39c7730a4a4897b165984a0352f6275d3008f13b90029";
 
     //私钥
-    private static final String PRIVATE_KEY = "0xe19533f586d3356f1c2ecb30d65430cfc15ef37907512a83812454c37aa429b7";
+    private static final String PRIVATE_KEY = "6d79264403d667f75caf2f1dca6412c6922b15433b515850c5c00a2aa12010e9";
 
     //节点服务
     private static NodeSrv nodeSrv;
     //合约地址
-    private static String contractAddress = "0x51d26d1acf500fcb651448aca517c4d34a2ed3e1";
+    private static String contractAddress;
     //交易哈希
     private static String existTxHash;
     private static PrivateKey privKey = new PrivateKeyECDSA(PRIVATE_KEY);
@@ -49,48 +52,33 @@ public class NodeApiTest {
 
     @BeforeClass
     public static void init() throws IOException{
-        nodeSrv = new NodeSrv("http://127.0.0.1:46657");
-//        // 初始化contractAddress existTxHash
-//        String accountAddress = privKey.getAddress();
-//        //获取nonce
-//        int nonce = nodeSrv.queryNonce(accountAddress);
-//        //部署合约, 初始化contractAddress
-//        DeployContractResult deployRes = nodeSrv.deployContractCompl(bCode, Arrays.asList(), privKey, BigInteger.valueOf(nonce));
-//        contractAddress = deployRes.getContractAddr();
-//        log.info("contractAddr {}",contractAddress);
-//
-//        nonce++;
-//        // event 定义
-//        Event DEPOSIT = new Event("Deposit",
-//                Arrays.asList(),
-//                Arrays.asList(new TypeReference<Address>() {
-//                }, new TypeReference<Address>() {
-//                }, new TypeReference<Utf8String>() {
-//                }));
-//        Function functionDef = new Function("deposit", Arrays.asList(), Arrays.asList());
-//        existTxHash = nodeSrv.callContractEvm(BigInteger.valueOf(nonce),
-//                contractAddress,
-//                functionDef, //函数接口定义
-//                privKey,
-//                new DemoEventCallBack(DEPOSIT)); //callBack
-//        log.info("txHash {}" ,existTxHash);
+    	
+        nodeSrv = new NodeSrv("http://localhost:46657");
+        // 初始化contractAddress existTxHash
+        String accountAddress = privKey.getAddress();
+        //获取nonce
+        int nonce = nodeSrv.queryNonce(accountAddress);
+        //部署合约, 初始化contractAddress
+        DeployContractResult deployRes = nodeSrv.deployContractCompl(bCode, Arrays.asList(), privKey, BigInteger.valueOf(nonce));
+        contractAddress = deployRes.getContractAddr();
+        log.info("contractAddr {}",contractAddress);
+
+        nonce++;
+        // event 定义
+        Event DEPOSIT = new Event("Deposit",
+                Arrays.asList(),
+                Arrays.asList(new TypeReference<Address>() {
+                }, new TypeReference<Address>() {
+                }, new TypeReference<Utf8String>() {
+                }));
+        Function functionDef = new Function("deposit", Arrays.asList(), Arrays.asList());
+        existTxHash = nodeSrv.callContractEvm(BigInteger.valueOf(nonce),
+                contractAddress,
+                functionDef, //函数接口定义
+                privKey,
+                new DemoEventCallBack(DEPOSIT)); //callBack
+        log.info("txHash {}" ,existTxHash);
     }
-
-    @Test
-    public void receipt() throws Exception {
-        TransactionReceipt receipt = nodeSrv.queryReceiptRaw("0x3dc0d5cd7283ca3b1e820910c538a6f01e298d105c24d338a401c45b8eb9f7c2");
-        log.info("aaa{}",receipt);
-
-    }
-
-
-    @Test
-    public void hegiht() throws Exception {
-        BlockHashResult receipt = nodeSrv.blockHashs(113L);
-        log.info("aaa{}",receipt);
-
-    }
-
 
     @Test
     public void testDeployContract() throws IOException, InterruptedException {
@@ -99,12 +87,11 @@ public class NodeApiTest {
         int nonce = nodeSrv.queryNonce(accountAddress);
         log.info("nonce {}" , nonce);
         //部署合约
-        DeployContractResult deployRes = nodeSrv.deployContractCompl(bCode, Arrays.asList(), privKey, BigInteger.valueOf(nonce),null);
+        DeployContractResult deployRes = nodeSrv.deployContractCompl(bCode, Arrays.asList(), privKey, BigInteger.valueOf(nonce));
         log.info("contractAddr {}",deployRes.getContractAddr());
         log.info("deploy txHash {}",deployRes.getTxHash());
-        Thread.sleep(3000);
+        Thread.sleep(1000);
     }
-
 
     @Test
     public void testQueryContract() throws IOException, InterruptedException {
@@ -119,7 +106,7 @@ public class NodeApiTest {
     }
 
     @Test
-    public void testQueryContractWithSig() throws IOException{
+    public void testQueryContractWithSig() throws IOException, CryptoException {
         String address = privKey.getAddress();
         int nonce = nodeSrv.queryNonce(address);
         log.info("nonce {}" , nonce);
@@ -127,70 +114,67 @@ public class NodeApiTest {
         }));
         RawTransaction tx = TransactionUtil.createCallContractTransaction(BigInteger.valueOf(nonce), contractAddress, functionDef);
         Signature sig = CryptoUtil.generateSignature(tx, privKey);
-        List<Type> resp  = nodeSrv.queryContractWithSig(BigInteger.valueOf(nonce), contractAddress, functionDef, sig);
+        List<Type> resp  = nodeSrv.queryContractWithSig(BigInteger.valueOf(nonce), contractAddress, functionDef, BigInteger.valueOf(0), sig);
         log.info("resp {}", resp);
     }
 
-//    @Test
-//    public void testCallContactWithSig() throws IOException, InterruptedException{
-//        String address = privKey.getAddress();
-//        int nonce = nodeSrv.queryNonce(address);
-//        log.info("nonce {}" , nonce);
-//
-//        // event 定义
-//        Event DEPOSIT = new Event("Deposit",
-//                Arrays.asList(),
-//                Arrays.asList(new TypeReference<Address>() {
-//                }, new TypeReference<Address>() {
-//                }, new TypeReference<Utf8String>() {
-//                }));
-//
-//        Function functionDef = new Function("deposit", Arrays.asList(), Arrays.asList());
-//        RawTransaction tx = TransactionUtil.createCallContractTransaction(BigInteger.valueOf(nonce), contractAddress, functionDef);
-//        Signature sig = CryptoUtil.generateSignature(tx, privKey);
-//        String resp = nodeSrv.callContractEvmWithSig(BigInteger.valueOf(nonce),
-//                contractAddress,
-//                functionDef, //函数接口定义
-//                sig,
-//                new DemoEventCallBack(DEPOSIT)); //callBack
-//
-//        log.info("call contract resp:" + resp);
-//
-//        Thread.sleep(5000);
-//    }
+    @Test
+    public void testCallContactWithSig() throws IOException, InterruptedException, CryptoException {
+        String address = privKey.getAddress();
+        int nonce = nodeSrv.queryNonce(address);
+        log.info("nonce {}" , nonce);
+
+        // event 定义
+        Event DEPOSIT = new Event("Deposit",
+                Arrays.asList(),
+                Arrays.asList(new TypeReference<Address>() {
+                }, new TypeReference<Address>() {
+                }, new TypeReference<Utf8String>() {
+                }));
+
+        Function functionDef = new Function("deposit", Arrays.asList(), Arrays.asList());
+        RawTransaction tx = TransactionUtil.createCallContractTransaction(BigInteger.valueOf(nonce), contractAddress, functionDef);
+        Signature sig = CryptoUtil.generateSignature(tx, privKey);
+        String resp = nodeSrv.callContractEvmWithSig(BigInteger.valueOf(nonce),
+                contractAddress,
+                functionDef, //函数接口定义
+                sig,
+                new DemoEventCallBack(DEPOSIT)); //callBack
+        existTxHash = resp;
+        log.info("call contract resp:" + resp);
+
+        Thread.sleep(5000);
+    }
 
 
-//    @Test
-//    public void testCallContactAsync() throws IOException, InterruptedException{
-//
-//        /*
-//          参考test.sol
-//         */
-//        String address = privKey.getAddress();
-//        int nonce = nodeSrv.queryNonce(address);
-//        log.info("nonce {}" , nonce);
-//
-//        // event 定义
-//        Event DEPOSIT = new Event("Deposit",
-//                Arrays.asList(),
-//                Arrays.asList(new TypeReference<Address>() {
-//                }, new TypeReference<Address>() {
-//                }, new TypeReference<Utf8String>() {
-//                }));
-//
-//        Function functionDef = new Function("deposit", Arrays.asList(), Arrays.asList());
-//
-//        String resp = nodeSrv.callContractEvm(BigInteger.valueOf(nonce),
-//                contractAddress,
-//                functionDef, //函数接口定义
-//                privKey,
-//                new DemoEventCallBack(DEPOSIT), false); //callBack
-//        log.info("abc" + resp);
-//        Thread.sleep(10000);
-//    }
+    @Test
+    public void testCallContactAsync() throws IOException, InterruptedException, CryptoException {
 
+        /**
+         * 参考test.sol
+         */
+        String address = privKey.getAddress();
+        int nonce = nodeSrv.queryNonce(address);
+        log.info("nonce {}" , nonce);
 
+        // event 定义
+        Event DEPOSIT = new Event("Deposit",
+                Arrays.asList(),
+                Arrays.asList(new TypeReference<Address>() {
+                }, new TypeReference<Address>() {
+                }, new TypeReference<Utf8String>() {
+                }));
 
+        Function functionDef = new Function("deposit", Arrays.asList(), Arrays.asList());
+
+        String resp = nodeSrv.callContractEvm(BigInteger.valueOf(nonce),
+                contractAddress,
+                functionDef, //函数接口定义
+                privKey,
+                new DemoEventCallBack(DEPOSIT), false); //callBack
+        log.info("abc" + resp);
+        Thread.sleep(10000);
+    }
 
     @Test
     public void testQueryNonce() throws IOException {
@@ -200,36 +184,11 @@ public class NodeApiTest {
     }
 
     @Test
-    public void testQueryRecp() throws Exception {
-        List<LogInfo> resp = nodeSrv.queryReceipt(existTxHash);
+    public void testQueryRecp() throws IOException {
+    	log.info("receipt_hash:" + existTxHash);
+    	TransactionReceipt resp = nodeSrv.queryReceiptRaw(existTxHash);
         Assert.assertNotNull(resp);
-        log.info("" + resp);
-    }
-
-    @Test//0xaf1cd133d0f9b3a5f9fed57222dc59fa7d71de37c298c1dcfae04a6a0ed77806
-    public void originDemo() throws Exception {//0x8ed8c118709d0cd7657343ff3c630e38e0dcb322c2ac3d6bf1b06eca6577dbd5
-        //0x9072fd4b203c0cc83ee697de19a245c95a2e9e36738f52afe6c3d6dac20e05cc
-        TransactionReceipt receipt = nodeSrv.queryReceiptRaw("0x9072fd4b203c0cc83ee697de19a245c95a2e9e36738f52afe6c3d6dac20e05cc");
-        log.info(receipt.toString());
-    }
-
-    @Test
-    public void hashDemo() throws Exception {
-        BlockHashResult hashs = nodeSrv.blockHashs(123L);
-        System.out.println(hashs);
-    }
-
-    @Test
-    public void demo(){
-        for(int i=0;i<1024;i++){
-            byte[] bb = new BigInteger(i+"").toByteArray();
-            for(byte b:bb){
-                System.out.print(b);
-                System.out.print("'");
-            }
-            System.out.println();
-        }
-
+        log.info("receipt:" + resp);
     }
 
     @Test
@@ -255,22 +214,19 @@ public class NodeApiTest {
             Assert.assertEquals(respp.toString(), "[0x402c3035ec3ec9f320ffc4b20d22b1f39b6caddb, 0x402c3035ec3ec9f320ffc4b20d22b1f39b6caddb, abc]");
         });
     }
-
+    	
     @Test
-    public void decodeRlp(){
-        String rlp ="F90468A0C0A91A921BCBBAAA0A68E4CC6D1C3506AFE6CEC04182864D4A9B2B52A201CADD8241C0B9010000000000000800000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000040000000040000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000040000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000A05C453969F6EA57086D02097310F203DC0F69F3BD0B826E5C0BFEC36190F8AD45940000000000000000000000000000000000000000F90305F9030294AE9079941A8D2A818484CF6DA50F1801FA5A2B15E1A012A125D7B0E229353D9349FDD7E9915CBF6AC37FACD381E93C288CAD1C3E6B44B902800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000423D4C14A8138E719D65304881B113E1D106ED9A000000000000000000000000C82DF7D44017E1D26E6CCC005F07057EDEDDA97D000000000000000000000000000000000000000000000000000000000000000A000000000000000000000000000000000000000000000000000000000000014000000000000000000000000000000000000000000000000000000000000001A000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000240000000000000000000000000000000000000000000000000000000005D40FFA10000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000002461313833333435612D316239372D346462632D613835632D64313832313938626563636400000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000002462633635663166662D316136392D346330392D383235612D36333663373837643237383200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000FE99D9EE7ADBEE58F91E8BDACE8B4A60000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000DE8BDACE5B8812D3037333130310000000000000000000000000000000000000083010EF9A05C453969F6EA57086D02097310F203DC0F69F3BD0B826E5C0BFEC36190F8AD4580A00000000000000000000000006904E4DDC17748A71E0B857F72AFC816F1552A8B808241C0";
-
-        byte[] rlpb = Numeric.hexStringToByteArray(rlp);
-        TransactionReceipt res = new TransactionReceipt(rlpb);
-        System.out.println(res);
-
+    public void testQueryTxHashsByHeight() throws IOException {
+    	TransactionHashs txHashs = nodeSrv.queryTransactionHashsByHeight(BigInteger.valueOf(10));
+        log.info("count:"+txHashs.getCount());
+        for (int i =0;i <txHashs.getHashs().length;i++) {
+        	log.info("hash:"+txHashs.getHashs()[i]);
+        }
     }
-
-
-
-
-
-
-
-
+    
+    @Test
+    public void testQueryRawTransactionByHash() throws IOException {
+    	RawTransactionData rawTx = nodeSrv.queryRawTransactionByHash(existTxHash);
+        log.info("to={},nonce={},amout={},gaslimit={},gasprice={},input={},v={},r={},s={}",Hex.toHexString(rawTx.getTo()),rawTx.getNonce(),rawTx.getValue(),rawTx.getGas(),rawTx.getGasprice(),rawTx.getInput(),rawTx.getV(),rawTx.getR(),rawTx.getS());
+    }
 }

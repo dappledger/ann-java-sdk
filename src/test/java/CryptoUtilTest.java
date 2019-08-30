@@ -1,9 +1,9 @@
-import com.rendez.api.CryptoUtil;
-import com.rendez.api.TransactionUtil;
-import com.rendez.api.crypto.PrivateKey;
-import com.rendez.api.crypto.PrivateKeyECDSA;
-import com.rendez.api.crypto.Signature;
-import com.rendez.api.crypto.SignatureECDSA;
+import com.genesis.api.CryptoUtil;
+import com.genesis.api.TransactionUtil;
+import com.genesis.api.crypto.PrivateKey;
+import com.genesis.api.crypto.PrivateKeyECDSA;
+import com.genesis.api.crypto.Signature;
+import com.genesis.api.crypto.SignatureECDSA;
 import org.junit.Assert;
 import org.junit.Test;
 
