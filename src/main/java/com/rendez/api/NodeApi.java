@@ -1,5 +1,7 @@
 package com.rendez.api;
 
+import com.alibaba.fastjson.JSONObject;
+import com.google.gson.JsonObject;
 import com.rendez.api.bean.rendez.BaseResp;
 import com.rendez.api.bean.rendez.ResultCommit;
 import com.rendez.api.bean.rendez.ResultQuery;
@@ -36,12 +38,20 @@ public interface NodeApi {
     @GET("query")
     Call<BaseResp<ResultQuery>> query(@Query("query") String query);
 
-//    /**
-//     * 查询交易
-//     * @param query
-//     * @return
-//     */
-//    @GET("query")
-//    Call<BaseResp<ResultQuery>> query(@Query("query") String query);
+    /**
+     * 查询交易
+     * @param query
+     * @return
+     */
+    @GET("transaction")
+    Call<BaseResp<ResultQuery>> transaction(@Query("tx") String query);
+
+    /**
+     * 根据高度查询交易列表
+     * @param height
+     * @return
+     */
+    @GET("block")
+    Call<BaseResp<JSONObject>> height(@Query("height") Long height);
 
 }
