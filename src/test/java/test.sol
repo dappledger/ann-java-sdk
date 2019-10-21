@@ -1,26 +1,28 @@
-pragma solidity ^0.4.0;
+pragma solidity ^0.5.0;
 
-contract ClientReceipt {
+contract JavaContractTest {
     event Deposit(
-        address from,
-        address to,
-        string abc
+        address owner,
+        uint256 age,
+        string comment
     );
-
-    struct OrgInfo{
-        string owner;
-        uint256  age;
+    
+    mapping (address=>uint256) OrgInfo;
+    
+    constructor() public {
     }
 
-    function deposit() {
-        // Any call to this function (even deeply nested) can
-        // be detected from the JavaScript API by filtering
-        // for `Deposit` to be called.
-        Deposit(msg.sender,msg.sender,"abc");
+    function deposit(uint256 _age,string memory _comment) public {
+        OrgInfo[msg.sender] = _age;
+        emit Deposit(msg.sender,_age,_comment);
     }
 
 
-    function queryInfo()public returns (string info){
-       info = "abcd";
+    function queryInfo() public view returns(uint256){
+    	return OrgInfo[msg.sender];
+    }
+    
+    function queryInfoWithAddress(address _owner) public view returns(uint256){
+    	return OrgInfo[_owner];
     }
 }
