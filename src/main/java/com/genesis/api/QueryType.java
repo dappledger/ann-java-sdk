@@ -7,6 +7,7 @@ public enum QueryType {
     Contract("0"),
     Nonce("1"),
     Receipt("3"),
+    Payload("5"),
 	ContractByHeight("10"),
 	Key("11"),
 	KeyPrefix("12");
@@ -27,6 +28,17 @@ public enum QueryType {
         byte[] resp = new byte[addressByte.length + 1];
         resp[0] = this.getCode();
         System.arraycopy(addressByte, 0, resp, 1, addressByte.length);
+        return Numeric.toHexString(resp);
+
+    }
+    
+    public String ppadd(String address) {
+    	 
+        byte[] addressByte = Numeric.hexStringToByteArray(address);
+        byte[] resp = new byte[addressByte.length + 2];
+        resp[0] = this.getCode();
+        resp[1] = 0x01;
+        System.arraycopy(addressByte, 0, resp, 2, addressByte.length);
         return Numeric.toHexString(resp);
 
     }

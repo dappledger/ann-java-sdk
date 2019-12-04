@@ -412,7 +412,7 @@ public class NodeSrv {
      * @return
      * @throws IOException
      */
-    public TransactionKVResult sendKVTxToNode(byte[] txMessage, boolean isSyncCall, EventCallBack callBack) throws IOException {
+    public TransactionNewResult sendTxToNodeWithError(byte[] txMessage, boolean isSyncCall, EventCallBack callBack) throws IOException {
         Response<BaseResp<ResultCommit>> httpRes;
         if (isSyncCall){
             httpRes = stub.broadcastTxCommit(Numeric.toHexString(txMessage)).execute();
@@ -421,7 +421,7 @@ public class NodeSrv {
         }
         handleRespCommitError(httpRes);
         
-        TransactionKVResult res = new TransactionKVResult();
+        TransactionNewResult res = new TransactionNewResult();
         if (StringUtils.isNotBlank(httpRes.body().getError())) {
         	res.setErrMsg(httpRes.body().getError());
         }else {
@@ -494,27 +494,27 @@ public class NodeSrv {
     * @return 交易hash
     * @throws IOException
     */
-   public TransactionKVResult putKv(BigInteger nonce, String key, String value, PrivateKey privateKey) throws IOException {
+   public TransactionNewResult putKv(BigInteger nonce, String key, String value, PrivateKey privateKey) throws IOException {
 	   RawTransaction tx = TransactionUtil.createPutKVTransaction(nonce,key,value);
 	   Signature sig = CryptoUtil.generateSignature(tx, privateKey);
-	   TransactionKVResult res = callKvTxWithSig(nonce, key, value, sig, true);
+	   TransactionNewResult res = callKvTxWithSig(nonce, key, value, sig, true);
        return res;
    }
 
-   public TransactionKVResult putKvAsync(BigInteger nonce,String key, String value, PrivateKey privateKey) throws IOException {
+   public TransactionNewResult putKvAsync(BigInteger nonce,String key, String value, PrivateKey privateKey) throws IOException {
 	   RawTransaction tx = TransactionUtil.createPutKVTransaction(nonce,key,value);
 	   Signature sig = CryptoUtil.generateSignature(tx, privateKey);
-	   TransactionKVResult res = callKvTxWithSig(nonce, key, value, sig, false);
+	   TransactionNewResult res = callKvTxWithSig(nonce, key, value, sig, false);
        return res;
    }
    
-   public TransactionKVResult putKvSignature(BigInteger nonce,String key, String value, Signature sig) throws IOException {
-	   TransactionKVResult res = callKvTxWithSig(nonce, key, value, sig, true);
+   public TransactionNewResult putKvSignature(BigInteger nonce,String key, String value, Signature sig) throws IOException {
+	   TransactionNewResult res = callKvTxWithSig(nonce, key, value, sig, true);
        return res;
    }
    
-   public TransactionKVResult putKvSignatureAsync(BigInteger nonce,String key, String value, Signature sig) throws IOException {
-	   TransactionKVResult res = callKvTxWithSig(nonce, key, value, sig, false);
+   public TransactionNewResult putKvSignatureAsync(BigInteger nonce,String key, String value, Signature sig) throws IOException {
+	   TransactionNewResult res = callKvTxWithSig(nonce, key, value, sig, false);
        return res;
    }
    
@@ -530,10 +530,10 @@ public class NodeSrv {
    * @return txHash 交易哈希
    * @throws IOException
    */
-   public TransactionKVResult callKvTxWithSig(BigInteger nonce, String key, String value, Signature sig, boolean isSyncCall) throws IOException {
+   public TransactionNewResult callKvTxWithSig(BigInteger nonce, String key, String value, Signature sig, boolean isSyncCall) throws IOException {
 	   RawTransaction tx = TransactionUtil.createPutKVTransaction(nonce,key,value);
        byte[] message = TransactionUtil.encodeWithSig(tx, sig);
-       TransactionKVResult res = sendKVTxToNode(message, isSyncCall, null);
+       TransactionNewResult res = sendTxToNodeWithError(message, isSyncCall, null);
        return res;
    }
    
@@ -636,7 +636,6 @@ public class NodeSrv {
     }
     
     private void handleRespKVQuery(Response<BaseResp<ResultQuery>> httpRes) {
-    	log.info("query err：", httpRes.toString());
         if (!httpRes.isSuccessful()) {
             throw new BaseException(ErrCode.ERR_NODEAPI, httpRes.raw().toString());
         }
@@ -650,4 +649,59 @@ public class NodeSrv {
             throw new BaseException(ErrCode.ERR_NODEAPI, httpRes.body().getError());
         }
     }
+    
+    
+    /**
+    *
+             * 调用payload交易
+    *
+    * @param nonce
+    * @param key  合约地址
+    * @param value 合约函数定义
+    * @param privateKey
+    * @return 交易hash
+    * @throws IOException
+    */
+   public TransactionNewResult sendPayloadTx(BigInteger nonce,String to, String payload, BigInteger value, PrivateKey privateKey) throws IOException {
+	   RawTransaction tx = TransactionUtil.createPayloadTransaction(nonce,to,payload,value);
+	   Signature sig = CryptoUtil.generateSignature(tx, privateKey);
+	   TransactionNewResult res = callPayloadWithSig(nonce,to, payload, value, sig, true);
+       return res;
+   }
+
+   public TransactionNewResult sendPayloadTxAsync(BigInteger nonce,String to,String payload, BigInteger value, PrivateKey privateKey) throws IOException {
+	   RawTransaction tx = TransactionUtil.createPayloadTransaction(nonce,to,payload,value);
+	   Signature sig = CryptoUtil.generateSignature(tx, privateKey);
+	   TransactionNewResult res = callPayloadWithSig(nonce,to, payload, value, sig, false);
+       return res;
+   }
+   
+   public TransactionNewResult callPayloadWithSig(BigInteger nonce,String to,String payload, BigInteger value, Signature sig, boolean isSyncCall) throws IOException {
+       RawTransaction tx = TransactionUtil.createPayloadTransaction(nonce,to, payload, value);
+       byte[] message = TransactionUtil.encodeWithSig(tx, sig);
+       TransactionNewResult res = sendTxToNodeWithError(message, isSyncCall, null);
+       return res;
+   }
+   
+   /**
+   *
+         *查詢payload 交易
+   * @param txhash
+   * @return 
+   * @throws IOException
+   */
+   public ResultQueryPayload getPayloadWithHash(String hash) throws IOException {
+	   Response<BaseResp<ResultQuery>> httpResp = stub.query(QueryType.Payload.ppadd(hash)).execute();
+       handleRespKVQuery(httpResp);
+       BaseResp<ResultQuery> resp = httpResp.body();
+       log.debug(resp.toString());
+       ResultQueryPayload res = new ResultQueryPayload();
+       if (resp.getResult().getResult().isSuccess()) {
+    	   String value = resp.getResult().getResult().getData();
+           res.setPayload(value);
+       }else {
+    	   res.setErrMsg(resp.getResult().getResult().getLog());
+       }
+       return res;
+   }
 }

@@ -3,10 +3,11 @@ import com.genesis.api.CryptoUtil;
 import com.genesis.api.NodeSrv;
 import com.genesis.api.RawTransactionData;
 import com.genesis.api.ResultQueryKV;
+import com.genesis.api.ResultQueryPayload;
 import com.genesis.api.ResultQueryPrefixKV;
 import com.genesis.api.TransactionHashs;
-import com.genesis.api.TransactionKVResult;
 import com.genesis.api.TransactionKVTx;
+import com.genesis.api.TransactionNewResult;
 import com.genesis.api.TransactionReceipt;
 import com.genesis.api.TransactionUtil;
 import com.genesis.api.bean.model.DeployContractResult;
@@ -16,6 +17,7 @@ import com.genesis.api.crypto.Signature;
 import lombok.extern.slf4j.Slf4j;
 import org.bouncycastle.crypto.CryptoException;
 import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.util.blockchain.TransactionResult;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -85,6 +87,9 @@ public class NodeApiTest {
     	testPutKVs();
     	queryPreKV();
     	queryPreKV2();
+    	
+    	// payload
+    	testSendPayload();
     }
 
     // @Test
@@ -258,7 +263,7 @@ public class NodeApiTest {
     	int nonce = nodeSrv.queryNonce(address);
         log.info("nonce {}" , nonce);
         
-        TransactionKVResult res  = nodeSrv.putKv(BigInteger.valueOf(nonce), "key101", "value101", privKey);
+        TransactionNewResult res  = nodeSrv.putKv(BigInteger.valueOf(nonce), "key101", "value101", privKey);
         log.info("put kv sync res hash:"+ res.getTxHash() + ";error:"+ res.getErrMsg());
         Thread.sleep(2000);
     }
@@ -276,7 +281,7 @@ public class NodeApiTest {
     	int nonce = nodeSrv.queryNonce(address);
         log.info("nonce {}" , nonce);
         
-        TransactionKVResult res  = nodeSrv.putKvAsync(BigInteger.valueOf(nonce), "key101", "value102", privKey);
+        TransactionNewResult res  = nodeSrv.putKvAsync(BigInteger.valueOf(nonce), "key101", "value102", privKey);
         log.info("put kv asyc res hash:"+ res.getTxHash() + ";error:"+ res.getErrMsg());
         Thread.sleep(2000);
     }
@@ -299,9 +304,9 @@ public class NodeApiTest {
     	int nonce = nodeSrv.queryNonce(address);
         log.info("nonce {}" , nonce);
         
-        TransactionKVResult res1  = nodeSrv.putKv(BigInteger.valueOf(nonce), "key102", "value102", privKey);
+        TransactionNewResult res1  = nodeSrv.putKv(BigInteger.valueOf(nonce), "key102", "value102", privKey);
         log.info("put kv sync res1 hash:"+ res1.getTxHash() + ";error:"+ res1.getErrMsg());
-        TransactionKVResult res2  = nodeSrv.putKv(BigInteger.valueOf(nonce+1), "key103", "value103", privKey);
+        TransactionNewResult res2  = nodeSrv.putKv(BigInteger.valueOf(nonce+1), "key103", "value103", privKey);
         log.info("put kv sync res2 hash:"+ res2.getTxHash() + ";error:"+ res2.getErrMsg());
         Thread.sleep(2000);
     }
@@ -330,5 +335,20 @@ public class NodeApiTest {
         		log.info("get prefix kvs's key:"+kv.getKey() + ";value:" + kv.getValue());
         	}
     	}
+    }
+    
+    
+ // @Test
+    public void testSendPayload() throws IOException, InterruptedException, CryptoException {
+    	String address = privKey.getAddress();
+    	int nonce = nodeSrv.queryNonce(address);
+        log.info("nonce {}" , nonce);
+        
+        TransactionNewResult res  = nodeSrv.sendPayloadTx(BigInteger.valueOf(nonce), null, "payload2", BigInteger.valueOf(0), privKey);
+        log.info("send payload sync res hash:"+ res.getTxHash() + ";error:"+ res.getErrMsg());
+        Thread.sleep(2000);
+        
+        ResultQueryPayload pay = nodeSrv.getPayloadWithHash(res.getTxHash());
+        log.info("getpayload value:" + pay.getPayload()+ ";error:"+pay.getErrMsg());
     }
 }

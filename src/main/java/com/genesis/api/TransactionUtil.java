@@ -60,8 +60,8 @@ public class TransactionUtil {
      * 创建kv交易
      *
      * @param nonce
-     * @param contractAddress
-     * @param function 函数定义
+     * @param key
+     * @param value
      * @return
      */
     public static RawTransaction createPutKVTransaction(BigInteger nonce, String key,String value){
@@ -77,6 +77,19 @@ public class TransactionUtil {
         System.arraycopy(type, 0, resp, 0, type.length);
         System.arraycopy(strByte, 0, resp, type.length, strByte.length);
         return Hex.toHexString(resp);
+    }
+    
+    /**
+               * 创建payload交易
+     *
+     * @param nonce
+     * @param payload
+     * @param value 
+     * @return
+     */
+    public static RawTransaction createPayloadTransaction(BigInteger nonce,String to, String payload,BigInteger value){
+    	RawTransaction rtx = RawTransaction.createTransaction(nonce, BigInteger.ZERO, BigInteger.valueOf(1000000000L), to, value, Numeric.toHexString(payload.getBytes()));
+        return rtx;
     }
     
     /**
