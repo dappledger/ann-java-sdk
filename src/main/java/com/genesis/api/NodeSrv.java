@@ -17,6 +17,9 @@ import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.OkHttpClient;
 import org.apache.commons.lang.StringUtils;
+import org.ethereum.util.RLP;
+import org.ethereum.util.RLP.LList;
+import org.ethereum.util.RLPList;
 import org.ethereum.vm.LogInfo;
 import org.spongycastle.util.encoders.Hex;
 import org.web3j.abi.FunctionReturnDecoder;
@@ -399,6 +402,33 @@ public class NodeSrv {
         }
         return txHash;
     }
+    
+    /**
+     	* 将序列化好的KV交易广播到链节点
+     * broadcast signed and serialized tx to node rpc
+     * @param txMessage 交易（签名并序列化完成）
+     * @param isSyncCall 同步/异步上链
+     * @param callBack 回调
+     * @return
+     * @throws IOException
+     */
+    public TransactionKVResult sendKVTxToNode(byte[] txMessage, boolean isSyncCall, EventCallBack callBack) throws IOException {
+        Response<BaseResp<ResultCommit>> httpRes;
+        if (isSyncCall){
+            httpRes = stub.broadcastTxCommit(Numeric.toHexString(txMessage)).execute();
+        }else {
+            httpRes = stub.broadcastTxAsync(Numeric.toHexString(txMessage)).execute();
+        }
+        handleRespCommitError(httpRes);
+        
+        TransactionKVResult res = new TransactionKVResult();
+        if (StringUtils.isNotBlank(httpRes.body().getError())) {
+        	res.setErrMsg(httpRes.body().getError());
+        }else {
+        	res.setTxHash(httpRes.body().getResult().getTx_hash());
+        }
+        return res;
+    }
 
     /**
      *
@@ -451,15 +481,141 @@ public class NodeSrv {
         deployContractResult.setContractAddr(ContractUtils.generateContractAddress(address, nonce));
         return deployContractResult;
     }
+    
+    
+    /**
+    *
+    * 调用kv 交易
+    *
+    * @param nonce
+    * @param key  合约地址
+    * @param value 合约函数定义
+    * @param privateKey
+    * @return 交易hash
+    * @throws IOException
+    */
+   public TransactionKVResult putKv(BigInteger nonce, String key, String value, PrivateKey privateKey) throws IOException {
+	   RawTransaction tx = TransactionUtil.createPutKVTransaction(nonce,key,value);
+	   Signature sig = CryptoUtil.generateSignature(tx, privateKey);
+	   TransactionKVResult res = callKvTxWithSig(nonce, key, value, sig, true);
+       return res;
+   }
 
-
+   public TransactionKVResult putKvAsync(BigInteger nonce,String key, String value, PrivateKey privateKey) throws IOException {
+	   RawTransaction tx = TransactionUtil.createPutKVTransaction(nonce,key,value);
+	   Signature sig = CryptoUtil.generateSignature(tx, privateKey);
+	   TransactionKVResult res = callKvTxWithSig(nonce, key, value, sig, false);
+       return res;
+   }
+   
+   public TransactionKVResult putKvSignature(BigInteger nonce,String key, String value, Signature sig) throws IOException {
+	   TransactionKVResult res = callKvTxWithSig(nonce, key, value, sig, true);
+       return res;
+   }
+   
+   public TransactionKVResult putKvSignatureAsync(BigInteger nonce,String key, String value, Signature sig) throws IOException {
+	   TransactionKVResult res = callKvTxWithSig(nonce, key, value, sig, false);
+       return res;
+   }
+   
+   /**
+   *
+         * 使用生成好的签名调用kv 交易
+   *
+   * @param nonce nonce
+   * @param key key
+   * @param value value
+   * @param sig 交易签名
+   * @param isSyncCall 是否同步调用
+   * @return txHash 交易哈希
+   * @throws IOException
+   */
+   public TransactionKVResult callKvTxWithSig(BigInteger nonce, String key, String value, Signature sig, boolean isSyncCall) throws IOException {
+	   RawTransaction tx = TransactionUtil.createPutKVTransaction(nonce,key,value);
+       byte[] message = TransactionUtil.encodeWithSig(tx, sig);
+       TransactionKVResult res = sendKVTxToNode(message, isSyncCall, null);
+       return res;
+   }
+   
+   /**
+   *
+         *查詢kv 交易
+   *
+   * @return value
+   * @throws IOException
+   */
+   public ResultQueryKV getKvValueWithKey(String key) throws IOException {
+	   Response<BaseResp<ResultQuery>> httpResp = stub.query(QueryType.Key.paddString(key)).execute();
+       handleRespKVQuery(httpResp);
+       BaseResp<ResultQuery> resp = httpResp.body();
+       log.debug(resp.toString());
+       ResultQueryKV res = new ResultQueryKV();
+       if (resp.getResult().getResult().isSuccess()) {
+    	   String value = resp.getResult().getResult().getData();
+           res.setValue(value);
+       }else {
+    	   res.setErrMsg(resp.getResult().getResult().getLog());
+       }
+       return res;
+   }
+   
+   public String hexToASCII(String hexValue)
+   {
+       StringBuilder output = new StringBuilder("");
+       for (int i = 0; i < hexValue.length(); i += 2)
+       {
+           String str = hexValue.substring(i, i + 2);
+           output.append((char) Integer.parseInt(str, 16));
+       }
+       return output.toString();
+   }
+   
+   /**
+   *
+         *批量查詢kv 交易
+   * @param prefix 前缀
+   * @param lastkey 起始前一个key
+   * @param limit 返回數量
+   * @return value
+   * @throws IOException
+   */
+   public ResultQueryPrefixKV getKvValueWithPrefix(String prefix,String lastkey,BigInteger limit) throws IOException {
+	   byte[] quryData = TransactionUtil.encodeKVPrefixQuery(prefix,lastkey,limit);
+	   Response<BaseResp<ResultQuery>> httpResp = stub.query(QueryType.KeyPrefix.paddByte(quryData)).execute();
+	   handleRespKVQuery(httpResp);
+       BaseResp<ResultQuery> resp = httpResp.body();
+       log.debug(resp.toString());
+       
+       ResultQueryPrefixKV res = new ResultQueryPrefixKV();
+       if (resp.getResult().getResult().isSuccess()) {
+    	   String respData = resp.getResult().getResult().getData();
+    	   byte[] rlpEncoded = Numeric.hexStringToByteArray(respData);
+    	   LList list = RLP.decodeLazyList(rlpEncoded);
+    	   TransactionKVTx[] kvs = new TransactionKVTx[list.size()];
+    	   for (int i = 0; i <list.size(); i++) {
+    		   TransactionKVTx  kv = new TransactionKVTx(list.getBytes(i));
+    		   kvs[i] = kv;
+    	   }
+    	   res.setTxs(kvs);
+       }else {
+    	   res.setErrMsg(resp.getResult().getResult().getLog()); 
+       }
+       return res;
+   }
+   
+   
+   private void handleRespCommitError(Response<BaseResp<ResultCommit>> httpRes) {
+       if (!httpRes.isSuccessful()) {
+           throw new BaseException(ErrCode.ERR_NODEAPI, httpRes.raw().toString());
+       }
+   }
 
     private void handleRespCommit(Response<BaseResp<ResultCommit>> httpRes) {
         if (!httpRes.isSuccessful()) {
             throw new BaseException(ErrCode.ERR_NODEAPI, httpRes.raw().toString());
         }
         if (StringUtils.isNotBlank(httpRes.body().getError())) {
-            throw new BaseException(ErrCode.ERR_NODEAPI, httpRes.body().getError());
+        	throw new BaseException(ErrCode.ERR_NODEAPI, httpRes.body().getError());
         }
         if (!httpRes.body().getResult().isSuccess()) {
             throw new BaseException(httpRes.body().getResult().getLog());
@@ -476,6 +632,13 @@ public class NodeSrv {
         }
         if (!httpRes.body().getResult().getResult().isSuccess()) {
             throw new BaseException(httpRes.body().getResult().getResult().getLog());
+        }
+    }
+    
+    private void handleRespKVQuery(Response<BaseResp<ResultQuery>> httpRes) {
+    	log.info("query err：", httpRes.toString());
+        if (!httpRes.isSuccessful()) {
+            throw new BaseException(ErrCode.ERR_NODEAPI, httpRes.raw().toString());
         }
     }
     

@@ -2,7 +2,11 @@
 import com.genesis.api.CryptoUtil;
 import com.genesis.api.NodeSrv;
 import com.genesis.api.RawTransactionData;
+import com.genesis.api.ResultQueryKV;
+import com.genesis.api.ResultQueryPrefixKV;
 import com.genesis.api.TransactionHashs;
+import com.genesis.api.TransactionKVResult;
+import com.genesis.api.TransactionKVTx;
 import com.genesis.api.TransactionReceipt;
 import com.genesis.api.TransactionUtil;
 import com.genesis.api.bean.model.DeployContractResult;
@@ -60,6 +64,8 @@ public class NodeApiTest {
     @Test
     public void test() throws IOException, InterruptedException, CryptoException{
     	testQueryNonce();
+    	
+    	// contract
     	testDeployContract();
     	testCallContactWithSig();
     	testCallContactAsync();
@@ -69,6 +75,16 @@ public class NodeApiTest {
     	testRlp();
     	testQueryTxHashsByHeight();
     	testQueryRawTransactionByHash();
+    	
+    	// KV 
+    	testPutKV();
+    	queryKV();
+    	testPutKVAsync();
+    	queryKV2();
+    	queryKVNotExist();
+    	testPutKVs();
+    	queryPreKV();
+    	queryPreKV2();
     }
 
     // @Test
@@ -233,5 +249,86 @@ public class NodeApiTest {
     public void testQueryRawTransactionByHash() throws IOException {
     	RawTransactionData rawTx = nodeSrv.queryRawTransactionByHash(existTxHash);
         log.info("to={},nonce={},amout={},gaslimit={},gasprice={},input={},v={},r={},s={}",Hex.toHexString(rawTx.getTo()),rawTx.getNonce(),rawTx.getValue(),rawTx.getGas(),rawTx.getGasprice(),rawTx.getInput(),rawTx.getV(),rawTx.getR(),rawTx.getS());
+    }
+    
+    
+    // @Test
+    public void testPutKV() throws IOException, InterruptedException, CryptoException {
+    	String address = privKey.getAddress();
+    	int nonce = nodeSrv.queryNonce(address);
+        log.info("nonce {}" , nonce);
+        
+        TransactionKVResult res  = nodeSrv.putKv(BigInteger.valueOf(nonce), "key101", "value101", privKey);
+        log.info("put kv sync res hash:"+ res.getTxHash() + ";error:"+ res.getErrMsg());
+        Thread.sleep(2000);
+    }
+    
+    // @Test
+    public void queryKV() throws IOException, InterruptedException, CryptoException {
+    	ResultQueryKV res = nodeSrv.getKvValueWithKey("key101");
+        log.info("get kv's value:" + res.getValue()+ ";error:"+res.getErrMsg());
+    }
+    
+    
+    // @Test
+    public void testPutKVAsync() throws IOException, InterruptedException, CryptoException {
+    	String address = privKey.getAddress();
+    	int nonce = nodeSrv.queryNonce(address);
+        log.info("nonce {}" , nonce);
+        
+        TransactionKVResult res  = nodeSrv.putKvAsync(BigInteger.valueOf(nonce), "key101", "value102", privKey);
+        log.info("put kv asyc res hash:"+ res.getTxHash() + ";error:"+ res.getErrMsg());
+        Thread.sleep(2000);
+    }
+    
+    // @Test
+    public void queryKV2() throws IOException, InterruptedException, CryptoException {
+    	ResultQueryKV res = nodeSrv.getKvValueWithKey("key101");
+    	log.info("get kv's value2:" + res.getValue()+ ";error:"+res.getErrMsg());
+    }
+    
+    // @Test
+    public void queryKVNotExist() throws IOException, InterruptedException, CryptoException {
+    	ResultQueryKV res = nodeSrv.getKvValueWithKey("key102");
+    	log.info("get kv's value2:" + res.getValue()+ ";error:"+res.getErrMsg());
+    }
+    
+    // @Test
+    public void testPutKVs() throws IOException, InterruptedException, CryptoException {
+    	String address = privKey.getAddress();
+    	int nonce = nodeSrv.queryNonce(address);
+        log.info("nonce {}" , nonce);
+        
+        TransactionKVResult res1  = nodeSrv.putKv(BigInteger.valueOf(nonce), "key102", "value102", privKey);
+        log.info("put kv sync res1 hash:"+ res1.getTxHash() + ";error:"+ res1.getErrMsg());
+        TransactionKVResult res2  = nodeSrv.putKv(BigInteger.valueOf(nonce+1), "key103", "value103", privKey);
+        log.info("put kv sync res2 hash:"+ res2.getTxHash() + ";error:"+ res2.getErrMsg());
+        Thread.sleep(2000);
+    }
+    
+    // @Test
+    public void queryPreKV() throws IOException, InterruptedException, CryptoException {
+    	ResultQueryPrefixKV res = nodeSrv.getKvValueWithPrefix("k","key101",BigInteger.valueOf(2));
+    	if (res.getErrMsg() != null){
+    		log.info("get prefix kvs's key error:"+res.getErrMsg());
+    	}else {
+    		for (int i =0;i < res.getTxs().length;i++) {
+        		TransactionKVTx kv = res.getTxs()[i];
+        		log.info("get prefix kvs's key:"+kv.getKey() + ";value:" + kv.getValue());
+        	}
+    	}
+    }
+    
+    // @Test
+    public void queryPreKV2() throws IOException, InterruptedException, CryptoException {
+    	ResultQueryPrefixKV res = nodeSrv.getKvValueWithPrefix("k","key104",BigInteger.valueOf(2));
+    	if (res.getErrMsg() != null){
+    		log.info("get prefix kvs's key error:"+res.getErrMsg());
+    	}else {
+    		for (int i =0;i < res.getTxs().length;i++) {
+        		TransactionKVTx kv = res.getTxs()[i];
+        		log.info("get prefix kvs's key:"+kv.getKey() + ";value:" + kv.getValue());
+        	}
+    	}
     }
 }
