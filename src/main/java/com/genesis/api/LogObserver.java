@@ -1,6 +1,5 @@
 package com.genesis.api;
 
-
 import io.reactivex.Observer;
 import io.reactivex.disposables.Disposable;
 import lombok.extern.slf4j.Slf4j;
@@ -11,7 +10,6 @@ import java.util.List;
 
 @Slf4j
 public class LogObserver implements Observer<QueryRecTask> {
-
     //1s 抓一次
     private static final long Gape = 1000;
 

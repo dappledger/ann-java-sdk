@@ -1,12 +1,7 @@
 package com.genesis.api;
 
-import com.genesis.api.bean.exception.BaseException;
 import com.genesis.api.crypto.PrivateKey;
 import com.genesis.api.crypto.Signature;
-import com.genesis.api.crypto.SignatureECDSA;
-
-import jdk.internal.org.jline.utils.Log;
-
 import org.spongycastle.util.encoders.Hex;
 import org.web3j.abi.FunctionEncoder;
 import org.web3j.abi.datatypes.Function;
@@ -18,14 +13,9 @@ import org.web3j.rlp.RlpString;
 import org.web3j.rlp.RlpType;
 import org.web3j.utils.Bytes;
 import org.web3j.utils.Numeric;
-
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.math.BigInteger;
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 

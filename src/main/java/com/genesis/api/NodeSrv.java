@@ -1,10 +1,17 @@
 package com.genesis.api;
 
-
-import com.google.protobuf.ByteString;
 import com.genesis.api.bean.exception.BaseException;
 import com.genesis.api.bean.exception.ErrCode;
 import com.genesis.api.bean.model.DeployContractResult;
+import com.genesis.api.bean.model.QueryBlockTransactionHashs;
+import com.genesis.api.bean.model.QueryKVResult;
+import com.genesis.api.bean.model.QueryPrefixKVs;
+import com.genesis.api.bean.model.QueryTransaction;
+import com.genesis.api.bean.model.QueryTransactionPayload;
+import com.genesis.api.bean.model.QueryTransactionReceipt;
+import com.genesis.api.bean.model.RawTransactionData;
+import com.genesis.api.bean.model.SendTransactionResult;
+import com.genesis.api.bean.model.TransactionKVTx;
 import com.genesis.api.bean.genesis.*;
 import com.genesis.api.bean.genesis.ResultBlock.TxData;
 import com.genesis.api.crypto.PrivateKey;
@@ -19,7 +26,6 @@ import okhttp3.OkHttpClient;
 import org.apache.commons.lang.StringUtils;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLP.LList;
-import org.ethereum.util.RLPList;
 import org.ethereum.vm.LogInfo;
 import org.spongycastle.util.encoders.Hex;
 import org.web3j.abi.FunctionReturnDecoder;
@@ -30,6 +36,7 @@ import org.web3j.rlp.RlpDecoder;
 import org.web3j.rlp.RlpList;
 import org.web3j.rlp.RlpString;
 import org.web3j.utils.Numeric;
+
 import retrofit2.Response;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
@@ -45,11 +52,9 @@ import java.util.concurrent.TimeUnit;
 @Data
 @Slf4j
 public class NodeSrv {
-
     private Subject<QueryRecTask> sb;
-
     private NodeApi stub;
-
+    
     public NodeSrv(String url) {
         OkHttpClient okClient = new OkHttpClient.Builder()
                 .readTimeout(120, TimeUnit.SECONDS)
@@ -95,14 +100,14 @@ public class NodeSrv {
      * @return tx
      * @throws IOException
      */
-    public ResultTransaction queryTxByHash(String hashByte) throws IOException {
+    public QueryTransaction queryTxByHash(String hashByte) throws IOException {
         Response<BaseResp<ResultQuery>> httpResp = stub.transaction(hashByte).execute();
         handleRespQuery(httpResp);
         BaseResp<ResultQuery> resp = httpResp.body();
         log.debug(resp.toString());
         if (resp.getResult().getResult().getData() != null) {
         	byte[] rlp = Numeric.hexStringToByteArray(resp.getResult().getResult().getData());
-            ResultTransaction res = new ResultTransaction(rlp);
+        	QueryTransaction res = new QueryTransaction(rlp);
             return res;
         } else {
             return null;
@@ -116,7 +121,7 @@ public class NodeSrv {
         log.debug(resp.toString());
         if (resp.getResult().getResult().getData() != null) {
         	byte[] rlp = Numeric.hexStringToByteArray(resp.getResult().getResult().getData());
-            ResultTransaction res = new ResultTransaction(rlp);
+        	QueryTransaction res = new QueryTransaction(rlp);
             RawTransactionData txdata = new RawTransactionData(res.getRawTransaction());         
             return txdata;
         } else {
@@ -131,7 +136,7 @@ public class NodeSrv {
      * @return TransactionHashs
      * @throws IOException
      */
-    public TransactionHashs queryTransactionHashsByHeight(BigInteger height) throws IOException{
+    public QueryBlockTransactionHashs queryTransactionHashsByHeight(BigInteger height) throws IOException{
     	Response<BaseResp<ResultBlock>> httpResp = stub.block(height).execute();
     	handleRespBlock(httpResp);
         BaseResp<ResultBlock> resp = httpResp.body();
@@ -141,8 +146,7 @@ public class NodeSrv {
         	if (total != blockdata.getExtxs().length + blockdata.getTxs().length) {
         		return null;
         	}
-        	
-        	
+        	      	
         	String[] txs = blockdata.getTxs();
         	String[] extxs = blockdata.getTxs();
         	int base = txs.length;
@@ -158,14 +162,13 @@ public class NodeSrv {
         		hashs[base+i] = Numeric.toHexString(Hash.sha3(Numeric.hexStringToByteArray(extxs[i])));
         	}
         	log.info("hashs:"+hashs);
-        	TransactionHashs txHashs = new TransactionHashs(hashs,total);
+        	QueryBlockTransactionHashs txHashs = new QueryBlockTransactionHashs(hashs,total);
             return txHashs;
         } else {
             return null;
         }
     }
     
-
     /**
      *
      * 查询交易执行event log
@@ -175,7 +178,7 @@ public class NodeSrv {
      * @throws IOException
      */
     public List<LogInfo> queryReceipt(String txHash) throws IOException {
-    	TransactionReceipt receipt = queryReceiptRaw(txHash);
+    	QueryTransactionReceipt receipt = queryReceiptRaw(txHash);
         if (receipt != null) {
             return receipt.getLogInfoList();
         } else {
@@ -191,21 +194,20 @@ public class NodeSrv {
      * @return
      * @throws IOException
      */
-    public TransactionReceipt queryReceiptRaw(String txHash) throws IOException {
+    public QueryTransactionReceipt queryReceiptRaw(String txHash) throws IOException {
         Response<BaseResp<ResultQuery>> httpRes = stub.query(QueryType.Receipt.padd(txHash)).execute();
         handleRespQuery(httpRes);
         BaseResp<ResultQuery> resp = httpRes.body();
         log.debug(resp.toString());
-        TransactionReceipt res = new TransactionReceipt();
+        QueryTransactionReceipt res = new QueryTransactionReceipt();
         if (resp.getResult().getResult().getData() != null) {
             byte[] rlp = Numeric.hexStringToByteArray(resp.getResult().getResult().getData());
-            res = new TransactionReceipt(rlp);
+            res = new QueryTransactionReceipt(rlp);
         } else {
             return null;
         }
         
-        
-        ResultTransaction tx = queryTxByHash(txHash);
+        QueryTransaction tx = queryTxByHash(txHash);
         if (tx == null) {
         	return null;
         }
@@ -272,8 +274,7 @@ public class NodeSrv {
         byte[] message = TransactionUtil.encodeWithSig(tx, sig);
 
     	byte[] h = Numeric.toBytesPadded(height,8);
-    	System.out.println(Arrays.toString(h));
-    	
+
     	byte[] par = new byte[message.length+h.length];
     	System.arraycopy(message, 0, par, 0, message.length);  
         System.arraycopy(h, 0, par, message.length, h.length); 
@@ -412,7 +413,7 @@ public class NodeSrv {
      * @return
      * @throws IOException
      */
-    public TransactionNewResult sendTxToNodeWithError(byte[] txMessage, boolean isSyncCall, EventCallBack callBack) throws IOException {
+    public SendTransactionResult sendTxToNodeWithError(byte[] txMessage, boolean isSyncCall, EventCallBack callBack) throws IOException {
         Response<BaseResp<ResultCommit>> httpRes;
         if (isSyncCall){
             httpRes = stub.broadcastTxCommit(Numeric.toHexString(txMessage)).execute();
@@ -421,7 +422,7 @@ public class NodeSrv {
         }
         handleRespCommitError(httpRes);
         
-        TransactionNewResult res = new TransactionNewResult();
+        SendTransactionResult res = new SendTransactionResult();
         if (StringUtils.isNotBlank(httpRes.body().getError())) {
         	res.setErrMsg(httpRes.body().getError());
         }else {
@@ -494,33 +495,33 @@ public class NodeSrv {
     * @return 交易hash
     * @throws IOException
     */
-   public TransactionNewResult putKv(BigInteger nonce, String key, String value, PrivateKey privateKey) throws IOException {
+   public SendTransactionResult putKv(BigInteger nonce, String key, String value, PrivateKey privateKey) throws IOException {
 	   RawTransaction tx = TransactionUtil.createPutKVTransaction(nonce,key,value);
 	   Signature sig = CryptoUtil.generateSignature(tx, privateKey);
-	   TransactionNewResult res = callKvTxWithSig(nonce, key, value, sig, true);
+	   SendTransactionResult res = callKvTxWithSig(nonce, key, value, sig, true);
        return res;
    }
 
-   public TransactionNewResult putKvAsync(BigInteger nonce,String key, String value, PrivateKey privateKey) throws IOException {
+   public SendTransactionResult putKvAsync(BigInteger nonce,String key, String value, PrivateKey privateKey) throws IOException {
 	   RawTransaction tx = TransactionUtil.createPutKVTransaction(nonce,key,value);
 	   Signature sig = CryptoUtil.generateSignature(tx, privateKey);
-	   TransactionNewResult res = callKvTxWithSig(nonce, key, value, sig, false);
+	   SendTransactionResult res = callKvTxWithSig(nonce, key, value, sig, false);
        return res;
    }
    
-   public TransactionNewResult putKvSignature(BigInteger nonce,String key, String value, Signature sig) throws IOException {
-	   TransactionNewResult res = callKvTxWithSig(nonce, key, value, sig, true);
+   public SendTransactionResult putKvSignature(BigInteger nonce,String key, String value, Signature sig) throws IOException {
+	   SendTransactionResult res = callKvTxWithSig(nonce, key, value, sig, true);
        return res;
    }
    
-   public TransactionNewResult putKvSignatureAsync(BigInteger nonce,String key, String value, Signature sig) throws IOException {
-	   TransactionNewResult res = callKvTxWithSig(nonce, key, value, sig, false);
+   public SendTransactionResult putKvSignatureAsync(BigInteger nonce,String key, String value, Signature sig) throws IOException {
+	   SendTransactionResult res = callKvTxWithSig(nonce, key, value, sig, false);
        return res;
    }
    
    /**
    *
-         * 使用生成好的签名调用kv 交易
+   * 使用生成好的签名调用kv 交易
    *
    * @param nonce nonce
    * @param key key
@@ -530,26 +531,26 @@ public class NodeSrv {
    * @return txHash 交易哈希
    * @throws IOException
    */
-   public TransactionNewResult callKvTxWithSig(BigInteger nonce, String key, String value, Signature sig, boolean isSyncCall) throws IOException {
+   public SendTransactionResult callKvTxWithSig(BigInteger nonce, String key, String value, Signature sig, boolean isSyncCall) throws IOException {
 	   RawTransaction tx = TransactionUtil.createPutKVTransaction(nonce,key,value);
        byte[] message = TransactionUtil.encodeWithSig(tx, sig);
-       TransactionNewResult res = sendTxToNodeWithError(message, isSyncCall, null);
+       SendTransactionResult res = sendTxToNodeWithError(message, isSyncCall, null);
        return res;
    }
    
    /**
    *
-         *查詢kv 交易
+   *查詢kv 交易
    *
    * @return value
    * @throws IOException
    */
-   public ResultQueryKV getKvValueWithKey(String key) throws IOException {
+   public QueryKVResult getKvValueWithKey(String key) throws IOException {
 	   Response<BaseResp<ResultQuery>> httpResp = stub.query(QueryType.Key.paddString(key)).execute();
        handleRespKVQuery(httpResp);
        BaseResp<ResultQuery> resp = httpResp.body();
        log.debug(resp.toString());
-       ResultQueryKV res = new ResultQueryKV();
+       QueryKVResult res = new QueryKVResult();
        if (resp.getResult().getResult().isSuccess()) {
     	   String value = resp.getResult().getResult().getData();
            res.setValue(value);
@@ -572,21 +573,21 @@ public class NodeSrv {
    
    /**
    *
-         *批量查詢kv 交易
+   * 批量查詢kv 交易
    * @param prefix 前缀
    * @param lastkey 起始前一个key
    * @param limit 返回數量
    * @return value
    * @throws IOException
    */
-   public ResultQueryPrefixKV getKvValueWithPrefix(String prefix,String lastkey,BigInteger limit) throws IOException {
+   public QueryPrefixKVs getKvValueWithPrefix(String prefix,String lastkey,BigInteger limit) throws IOException {
 	   byte[] quryData = TransactionUtil.encodeKVPrefixQuery(prefix,lastkey,limit);
 	   Response<BaseResp<ResultQuery>> httpResp = stub.query(QueryType.KeyPrefix.paddByte(quryData)).execute();
 	   handleRespKVQuery(httpResp);
        BaseResp<ResultQuery> resp = httpResp.body();
        log.debug(resp.toString());
        
-       ResultQueryPrefixKV res = new ResultQueryPrefixKV();
+       QueryPrefixKVs res = new QueryPrefixKVs();
        if (resp.getResult().getResult().isSuccess()) {
     	   String respData = resp.getResult().getResult().getData();
     	   byte[] rlpEncoded = Numeric.hexStringToByteArray(respData);
@@ -653,7 +654,7 @@ public class NodeSrv {
     
     /**
     *
-             * 调用payload交易
+    * 调用payload交易
     *
     * @param nonce
     * @param key  合约地址
@@ -662,40 +663,40 @@ public class NodeSrv {
     * @return 交易hash
     * @throws IOException
     */
-   public TransactionNewResult sendPayloadTx(BigInteger nonce,String to, String payload, BigInteger value, PrivateKey privateKey) throws IOException {
+   public SendTransactionResult sendPayloadTx(BigInteger nonce,String to, String payload, BigInteger value, PrivateKey privateKey) throws IOException {
 	   RawTransaction tx = TransactionUtil.createPayloadTransaction(nonce,to,payload,value);
 	   Signature sig = CryptoUtil.generateSignature(tx, privateKey);
-	   TransactionNewResult res = callPayloadWithSig(nonce,to, payload, value, sig, true);
+	   SendTransactionResult res = callPayloadWithSig(nonce,to, payload, value, sig, true);
        return res;
    }
 
-   public TransactionNewResult sendPayloadTxAsync(BigInteger nonce,String to,String payload, BigInteger value, PrivateKey privateKey) throws IOException {
+   public SendTransactionResult sendPayloadTxAsync(BigInteger nonce,String to,String payload, BigInteger value, PrivateKey privateKey) throws IOException {
 	   RawTransaction tx = TransactionUtil.createPayloadTransaction(nonce,to,payload,value);
 	   Signature sig = CryptoUtil.generateSignature(tx, privateKey);
-	   TransactionNewResult res = callPayloadWithSig(nonce,to, payload, value, sig, false);
+	   SendTransactionResult res = callPayloadWithSig(nonce,to, payload, value, sig, false);
        return res;
    }
    
-   public TransactionNewResult callPayloadWithSig(BigInteger nonce,String to,String payload, BigInteger value, Signature sig, boolean isSyncCall) throws IOException {
+   public SendTransactionResult callPayloadWithSig(BigInteger nonce,String to,String payload, BigInteger value, Signature sig, boolean isSyncCall) throws IOException {
        RawTransaction tx = TransactionUtil.createPayloadTransaction(nonce,to, payload, value);
        byte[] message = TransactionUtil.encodeWithSig(tx, sig);
-       TransactionNewResult res = sendTxToNodeWithError(message, isSyncCall, null);
+       SendTransactionResult res = sendTxToNodeWithError(message, isSyncCall, null);
        return res;
    }
    
    /**
    *
-         *查詢payload 交易
+   * 查詢payload 交易
    * @param txhash
    * @return 
    * @throws IOException
    */
-   public ResultQueryPayload getPayloadWithHash(String hash) throws IOException {
+   public QueryTransactionPayload getPayloadWithHash(String hash) throws IOException {
 	   Response<BaseResp<ResultQuery>> httpResp = stub.query(QueryType.Payload.ppadd(hash)).execute();
        handleRespKVQuery(httpResp);
        BaseResp<ResultQuery> resp = httpResp.body();
        log.debug(resp.toString());
-       ResultQueryPayload res = new ResultQueryPayload();
+       QueryTransactionPayload res = new QueryTransactionPayload();
        if (resp.getResult().getResult().isSuccess()) {
     	   String value = resp.getResult().getResult().getData();
            res.setPayload(value);

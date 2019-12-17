@@ -9,8 +9,6 @@ public enum ErrCode {
     ERR_NODEAPI("5002, 调用节点错误:"),
     ERR_LIBEXCEPTION("5003, 调用库报错：");
 
-
-
     private final String desc;
     ErrCode(String desc) {
         this.desc = desc;

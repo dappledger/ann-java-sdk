@@ -1,6 +1,5 @@
 package com.genesis.api;
 
-
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -8,14 +7,11 @@ import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 
-
 /**
  * 众安链一些编码和工具的java实现
  * 参考 众安链：rendezvous
  */
 public class GenesisUtil {
-
-
     public static long DynamicBytesToLong(byte[] bs){
         ByteBuffer buffer = ByteBuffer.allocate(Long.BYTES);
         for (int i= 0; i< (Long.BYTES- bs.length);i++){
@@ -25,7 +21,6 @@ public class GenesisUtil {
         buffer.flip();//need flip
         return buffer.getLong();
     }
-
 
     public static int DynamicBytesToInt(byte[] bs){
         ByteBuffer buffer = ByteBuffer.allocate(Integer.BYTES);
@@ -51,7 +46,6 @@ public class GenesisUtil {
      * @return
      */
     public static int varIntSize(int i){
-
         if (i == 0){
             return 0;
         }
@@ -67,7 +61,6 @@ public class GenesisUtil {
         }
         return 4;
     }
-
 
     /**
      * 将data字节数组的长度有效字节长度, 长度有效字节, data依次写入outputStream
@@ -107,6 +100,4 @@ public class GenesisUtil {
         input.read(data);
         return data;
     }
-
-
 }

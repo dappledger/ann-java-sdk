@@ -1,14 +1,14 @@
-package com.genesis.api;
+package com.genesis.api.bean.model;
 
 import lombok.Data;
 
 @Data
-public class ResultQueryKV {
-	private String value;
+public class QueryTransactionPayload {
+	private String payload;
     private String errMsg;
     
-    public void setValue(String v) {
-    	value = hexToASCII(v);
+    public void setPayload(String p) {
+    	payload = hexToASCII(p);
     }
     
     public String hexToASCII(String hexValue)
@@ -22,3 +22,4 @@ public class ResultQueryKV {
 	       return output.toString();
 	   }
 }
+

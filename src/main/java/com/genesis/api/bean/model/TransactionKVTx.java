@@ -1,16 +1,10 @@
-package com.genesis.api;
+package com.genesis.api.bean.model;
 
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPItem;
 import org.ethereum.util.RLPList;
 import org.spongycastle.util.encoders.Hex;
-import org.web3j.rlp.RlpType;
-import org.web3j.utils.Numeric;
 
-import lombok.Data;
-import lombok.extern.slf4j.Slf4j;
-
-@Slf4j
 public class TransactionKVTx {
 	private byte[] key;
 	private byte[] value;

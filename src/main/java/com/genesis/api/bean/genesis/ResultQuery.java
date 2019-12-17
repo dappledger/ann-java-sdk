@@ -17,5 +17,4 @@ public class ResultQuery {
             return this.Code == 0;
         }
     }
-
 }

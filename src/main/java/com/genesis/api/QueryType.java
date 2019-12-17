@@ -1,7 +1,6 @@
 package com.genesis.api;
 
 import org.web3j.utils.Numeric;
-import jdk.internal.org.jline.utils.Log;
 
 public enum QueryType {
     Contract("0"),
@@ -23,17 +22,14 @@ public enum QueryType {
     }
 
     public String padd(String address) {
- 
         byte[] addressByte = Numeric.hexStringToByteArray(address);
         byte[] resp = new byte[addressByte.length + 1];
         resp[0] = this.getCode();
         System.arraycopy(addressByte, 0, resp, 1, addressByte.length);
         return Numeric.toHexString(resp);
-
     }
     
-    public String ppadd(String address) {
-    	 
+    public String ppadd(String address) { 
         byte[] addressByte = Numeric.hexStringToByteArray(address);
         byte[] resp = new byte[addressByte.length + 2];
         resp[0] = this.getCode();
