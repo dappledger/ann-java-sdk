@@ -1,9 +1,8 @@
 package com.genesis.api;
 
-import com.genesis.api.bean.exception.BaseException;
 import com.genesis.api.crypto.PrivateKey;
 import com.genesis.api.crypto.Signature;
-import com.genesis.api.crypto.SignatureECDSA;
+import org.spongycastle.util.encoders.Hex;
 import org.web3j.abi.FunctionEncoder;
 import org.web3j.abi.datatypes.Function;
 import org.web3j.abi.datatypes.Type;
@@ -14,14 +13,9 @@ import org.web3j.rlp.RlpString;
 import org.web3j.rlp.RlpType;
 import org.web3j.utils.Bytes;
 import org.web3j.utils.Numeric;
-
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.math.BigInteger;
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -35,7 +29,7 @@ public class TransactionUtil {
      * @return
      */
     public static RawTransaction createCallContractTransaction(BigInteger nonce, String contractAddress, Function function){
-        RawTransaction rtx = RawTransaction.createTransaction(nonce, BigInteger.ZERO, BigInteger.valueOf(100000000000L), contractAddress, FunctionEncoder.encode(function));
+        RawTransaction rtx = RawTransaction.createTransaction(nonce, BigInteger.ZERO, BigInteger.valueOf(1000000000L), contractAddress, FunctionEncoder.encode(function));
         return rtx;
     }
 
@@ -48,10 +42,46 @@ public class TransactionUtil {
      * @return
      */
     public static RawTransaction createDelopyContractTransaction(String binaryCode, List<Type> constructorParameters, BigInteger nonce){
-        RawTransaction rtx = RawTransaction.createTransaction(nonce, BigInteger.ZERO, BigInteger.valueOf(100000000000L), null, binaryCode + FunctionEncoder.encodeConstructor(constructorParameters));
+    	RawTransaction rtx = RawTransaction.createTransaction(nonce, BigInteger.ZERO, BigInteger.valueOf(1000000000L), null, binaryCode + FunctionEncoder.encodeConstructor(constructorParameters));
         return rtx;
     }
-
+    
+    /**
+     * 创建kv交易
+     *
+     * @param nonce
+     * @param key
+     * @param value
+     * @return
+     */
+    public static RawTransaction createPutKVTransaction(BigInteger nonce, String key,String value){
+    	byte[] kvByte = encodeWithKV(key,value);
+        RawTransaction rtx = RawTransaction.createTransaction(nonce, BigInteger.ZERO, BigInteger.valueOf(1000000000L), null, paddType(Numeric.toHexString(kvByte)));
+        return rtx;
+    }
+    
+    public static String paddType(String data) {
+        byte[] strByte = Numeric.hexStringToByteArray(data);
+        byte[] type = "kvTx-".getBytes();
+        byte[] resp = new byte[strByte.length + type.length];
+        System.arraycopy(type, 0, resp, 0, type.length);
+        System.arraycopy(strByte, 0, resp, type.length, strByte.length);
+        return Hex.toHexString(resp);
+    }
+    
+    /**
+               * 创建payload交易
+     *
+     * @param nonce
+     * @param payload
+     * @param value 
+     * @return
+     */
+    public static RawTransaction createPayloadTransaction(BigInteger nonce,String to, String payload,BigInteger value){
+    	RawTransaction rtx = RawTransaction.createTransaction(nonce, BigInteger.ZERO, BigInteger.valueOf(1000000000L), to, value, Numeric.toHexString(payload.getBytes()));
+        return rtx;
+    }
+    
     /**
      * decode单笔链上交易
      *
@@ -135,5 +165,45 @@ public class TransactionUtil {
         }
         return result;
     }
-
+    
+    /**
+     * encode kv交易
+     *
+     * @param kvtx
+     * @return
+     */
+    public static byte[] encodeWithKV(String key,String value) {
+    	List<RlpType> values = asKVRlpValues(key,value);
+        RlpList rlpList = new RlpList(values);
+        return RlpEncoder.encode(rlpList);
+    }
+    
+    private static List<RlpType> asKVRlpValues(String key,String value) {
+    	List<RlpType> result = new ArrayList();
+    	result.add(RlpString.create(key));
+        result.add(RlpString.create(value));
+        return result;
+    }
+    
+    /**
+     * encode kv prefix查詢
+     *
+     * @param prefix
+     * @param key
+     * @param limit
+     * @return
+     */
+    public static byte[] encodeKVPrefixQuery(String prefix, String lastKey,BigInteger limit) {
+    	List<RlpType> values = asKVPrefixValues(prefix,lastKey,limit);
+        RlpList rlpList = new RlpList(values);
+        return RlpEncoder.encode(rlpList);
+    }
+    
+    private static List<RlpType> asKVPrefixValues(String prefix, String lastKey,BigInteger limit) {
+    	List<RlpType> result = new ArrayList();
+        result.add(RlpString.create(prefix));
+        result.add(RlpString.create(lastKey));
+        result.add(RlpString.create(limit));
+        return result;
+    }
 }

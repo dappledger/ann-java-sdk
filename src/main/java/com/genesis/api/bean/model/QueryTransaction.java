@@ -1,42 +1,24 @@
-package com.genesis.api;
+package com.genesis.api.bean.model;
 
-import static org.apache.commons.lang3.ArrayUtils.nullToEmpty;
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
-
 import java.math.BigInteger;
-
-import org.web3j.rlp.RlpString;
 import org.web3j.utils.Numeric;
-
-import lombok.extern.slf4j.Slf4j;
-
-import org.ethereum.core.Bloom;
 import org.ethereum.util.RLP;
-import org.ethereum.util.RLPElement;
 import org.ethereum.util.RLPItem;
 import org.ethereum.util.RLPList;
-import org.ethereum.vm.LogInfo;
-import org.spongycastle.util.encoders.Hex;
 
-@Slf4j
-public class ResultTransaction {
-//	private byte[] blockHash = EMPTY_BYTE_ARRAY;
-//    private BigInteger blockHeight;
-//    private BigInteger transactionIndex;
-//    private byte[] rawTransaction = EMPTY_BYTE_ARRAY;
-//    private BigInteger timestamp;
-	
+public class QueryTransaction {	
 	private byte[] blockHash = EMPTY_BYTE_ARRAY;
     private byte[] blockHeight;
     private BigInteger transactionIndex;
     private byte[] rawTransaction = EMPTY_BYTE_ARRAY;
     private BigInteger timestamp;
     
-    public ResultTransaction() {
+    public QueryTransaction() {
     	
     }
     
-    public ResultTransaction(byte[] rlp) {
+    public QueryTransaction(byte[] rlp) {
     	RLPList params = RLP.decode2(rlp);
         RLPList result = (RLPList) params.get(0);
         

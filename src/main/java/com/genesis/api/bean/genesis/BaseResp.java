@@ -15,6 +15,4 @@ public class BaseResp<T> {
     public <T> BaseResp(){
 
     }
-
-
 }

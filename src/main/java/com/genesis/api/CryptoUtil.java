@@ -1,13 +1,10 @@
 package com.genesis.api;
 
-
-import com.github.jtendermint.crypto.RipeMD160;
 import com.genesis.api.crypto.PrivateKey;
 import com.genesis.api.crypto.Signature;
 import com.genesis.api.util.ByteUtil;
 import org.web3j.crypto.*;
 import org.web3j.utils.Numeric;
-
 import java.io.ByteArrayOutputStream;
 import java.math.BigInteger;
 

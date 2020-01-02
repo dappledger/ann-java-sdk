@@ -216,3 +216,10 @@ TransactionReceipt queryReceiptRaw(String txHash)
 List<LogInfo> queryReceipt(String txHash)
 ```
 查询交易执行event log
+
+
+## 贡献代码
+
+ 如果你有任何问题，可以提交[issue](https://github.com/dappledger/AnnChain/issues).
+<br/>
+如果你想贡献代码, 可以fork本仓库, 提交 [pull request](https://github.com/dappledger/ann-java-sdk/pulls) ,维护者将会细心review 你的代码，若一切ok，则会合并到主仓库
