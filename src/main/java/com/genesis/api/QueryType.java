@@ -9,7 +9,8 @@ public enum QueryType {
     Payload("5"),
 	ContractByHeight("10"),
 	Key("11"),
-	KeyPrefix("12");
+	KeyPrefix("12"),
+	PendingNonce("13");
 
     QueryType(String code) {
         this.code = new Byte(code);

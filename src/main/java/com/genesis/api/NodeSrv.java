@@ -94,6 +94,27 @@ public class NodeSrv {
     }
     
     /**
+     * 查询pending nonce
+     *
+     * @param address 账户地址
+     * @return pending nonce
+     * @throws IOException
+     */
+    public Integer queryPendingNonce(String address) throws IOException {
+        Response<BaseResp<ResultQuery>> httpResp = stub.query(QueryType.PendingNonce.padd(address)).execute();
+        handleRespQuery(httpResp);
+        String nonceStr = httpResp.body().getResult().getResult().getData();
+        if (StringUtils.isBlank(nonceStr)) {
+            throw new BaseException("can not obtain pending nonce for address " + address);
+        }
+        byte[] rlpEncoded = Numeric.hexStringToByteArray(nonceStr);
+        RlpList decode = RlpDecoder.decode(rlpEncoded);
+        String hexValue = ((RlpString) decode.getValues().get(0)).asString();
+        String cleanHexPrefix = Numeric.cleanHexPrefix(hexValue);
+        return StringUtils.isBlank(cleanHexPrefix) ? 0 : Integer.parseInt(cleanHexPrefix, 16);
+    }
+    
+    /**
      * 根据hash查询tx
      *
      * @param hash 交易hash
