@@ -60,12 +60,15 @@ public class NodeApiTest {
     
     @Test
     public void test() throws IOException, InterruptedException, CryptoException{
+    	// nonce
     	testQueryNonce();
+    	testQueryPendingNonce();
     	
     	// contract
     	testDeployContract();
     	testCallContactWithSig();
     	testCallContactAsync();
+    	testCallContactAsyncTxs();
     	testQueryContract();
     	testQueryContractWithSig();
     	testQueryRecp();
@@ -91,7 +94,7 @@ public class NodeApiTest {
     public void testDeployContract() throws IOException, InterruptedException {
         String accountAddress = privKey.getAddress();
         //获取nonce
-        int nonce = nodeSrv.queryNonce(accountAddress);
+        int nonce = nodeSrv.queryPendingNonce(accountAddress);
         log.info("nonce {}" , nonce);
         //部署合约
         DeployContractResult deployRes = nodeSrv.deployContractCompl(bCode, Arrays.asList(), privKey, BigInteger.valueOf(nonce));
@@ -104,7 +107,7 @@ public class NodeApiTest {
     // @Test
     public void testCallContactWithSig() throws IOException, InterruptedException, CryptoException {
         String address = privKey.getAddress();
-        int nonce = nodeSrv.queryNonce(address);
+        int nonce = nodeSrv.queryPendingNonce(address);
         log.info("nonce {}" , nonce);
 
         // event 定义
@@ -141,7 +144,7 @@ public class NodeApiTest {
          * 参考test.sol
          */
         String address2 = privKey2.getAddress();
-        int nonce = nodeSrv.queryNonce(address2);
+        int nonce = nodeSrv.queryPendingNonce(address2);
         log.info("nonce {}" , nonce);
 
         // event 定义
@@ -167,11 +170,32 @@ public class NodeApiTest {
         
         Thread.sleep(2000);
     }
+    
+    // @Test
+    public void testCallContactAsyncTxs() throws IOException, InterruptedException, CryptoException {
+        String address2 = privKey2.getAddress();
+        // event 定义
+        Function functionDef = new Function("deposit", 
+        		Arrays.asList(
+                new org.web3j.abi.datatypes.generated.Uint256(19),
+                new org.web3j.abi.datatypes.Utf8String("test2")), 
+                Arrays.asList());
+        for (int i=0;i<20;i++) {
+        	int nonce = nodeSrv.queryPendingNonce(address2);
+            log.info("nonce {}" , nonce);
+        	String resp = nodeSrv.callContractEvm(BigInteger.valueOf(nonce),
+                    contractAddress,
+                    functionDef, //函数接口定义
+                    privKey2,
+                    null, false); //callBack
+            log.info("call contract resp:" + resp);
+        }
+    }
 
     // @Test
     public void testQueryContract() throws IOException, InterruptedException {
         String address = privKey.getAddress();
-        int nonce = nodeSrv.queryNonce(address);
+        int nonce = nodeSrv.queryPendingNonce(address);
         log.info("nonce {}" , nonce);
         Function functionDef = new Function("queryInfo", 
         		Arrays.asList(), 
@@ -185,7 +209,7 @@ public class NodeApiTest {
     // @Test
     public void testQueryContractWithSig() throws IOException, CryptoException {
         String address2 = privKey2.getAddress();
-        int nonce = nodeSrv.queryNonce(address2);
+        int nonce = nodeSrv.queryPendingNonce(address2);
         log.info("nonce {}" , nonce);
         Function functionDef = new Function("queryInfoWithAddress", 
         		Arrays.asList(new org.web3j.abi.datatypes.Address(address2)), 
@@ -203,6 +227,13 @@ public class NodeApiTest {
         int resp = nodeSrv.queryNonce(address);
         log.info("testQueryNonce {}", resp);
     }
+    
+    // @Test
+    public void testQueryPendingNonce() throws IOException{
+    	String address = privKey.getAddress();
+        int resp = nodeSrv.queryPendingNonce(address);
+        log.info("testQueryPendingNonce {}", resp);
+    }
 
     // @Test
     public void testQueryRecp() throws IOException {
@@ -212,7 +243,7 @@ public class NodeApiTest {
         blockHeight = resp.getHeight();
         log.info("receipt:" + resp);
     }
-
+    
     // @Test
     public void testRlp() {
         byte[] rlpEncoded = Numeric.hexStringToByteArray("80");
@@ -255,7 +286,7 @@ public class NodeApiTest {
     // @Test
     public void testPutKV() throws IOException, InterruptedException, CryptoException {
     	String address = privKey.getAddress();
-    	int nonce = nodeSrv.queryNonce(address);
+    	int nonce = nodeSrv.queryPendingNonce(address);
         log.info("nonce {}" , nonce);
         
         SendTransactionResult res = nodeSrv.putKv(BigInteger.valueOf(nonce), "key101", "value101", privKey);
@@ -273,7 +304,7 @@ public class NodeApiTest {
     // @Test
     public void testPutKVAsync() throws IOException, InterruptedException, CryptoException {
     	String address = privKey.getAddress();
-    	int nonce = nodeSrv.queryNonce(address);
+    	int nonce = nodeSrv.queryPendingNonce(address);
         log.info("nonce {}" , nonce);
         
         SendTransactionResult res  = nodeSrv.putKvAsync(BigInteger.valueOf(nonce), "key101", "value102", privKey);
@@ -296,7 +327,7 @@ public class NodeApiTest {
     // @Test
     public void testPutKVs() throws IOException, InterruptedException, CryptoException {
     	String address = privKey.getAddress();
-    	int nonce = nodeSrv.queryNonce(address);
+    	int nonce = nodeSrv.queryPendingNonce(address);
         log.info("nonce {}" , nonce);
         
         SendTransactionResult res1  = nodeSrv.putKv(BigInteger.valueOf(nonce), "key102", "value102", privKey);
@@ -336,7 +367,7 @@ public class NodeApiTest {
     // @Test
     public void testSendPayload() throws IOException, InterruptedException, CryptoException {
     	String address = privKey.getAddress();
-    	int nonce = nodeSrv.queryNonce(address);
+    	int nonce = nodeSrv.queryPendingNonce(address);
         log.info("nonce {}" , nonce);
         
         SendTransactionResult res  = nodeSrv.sendPayloadTx(BigInteger.valueOf(nonce), null, "payload2", BigInteger.valueOf(0), privKey);
