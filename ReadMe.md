@@ -35,6 +35,15 @@ PrivateKey privKey;
 String address = privKey.getAddress();
 int nonce = nodeSrv.queryNonce(address);
 ```
+
+### 查询pending nonce
+
+``` java
+PrivateKey privKey;
+String address = privKey.getAddress();
+int nonce = nodeSrv.queryPendingNonce(address);
+```
+
 ### 部署合约
 部署之前编译生成的byteCode到节点
 

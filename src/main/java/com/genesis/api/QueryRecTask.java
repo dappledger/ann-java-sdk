@@ -6,7 +6,6 @@ import lombok.Data;
 @AllArgsConstructor
 @Data
 public class QueryRecTask {
-
     private String txHash;
     private EventCallBack eventCallBack;
     private NodeSrv nodeSrv;

@@ -1,16 +1,11 @@
-package com.genesis.api;
+package com.genesis.api.bean.model;
 
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
-
 import java.math.BigInteger;
-
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPItem;
 import org.ethereum.util.RLPList;
-import org.spongycastle.util.encoders.Hex;
 import org.web3j.utils.Numeric;
-
-import jdk.internal.org.jline.utils.Log;
 
 public class RawTransactionData {
 	private BigInteger nonce;
@@ -23,8 +18,7 @@ public class RawTransactionData {
     private BigInteger r;
     private BigInteger v;
     private BigInteger s;
-    
-    
+      
     public RawTransactionData() {
     	
     }
@@ -80,22 +74,36 @@ public class RawTransactionData {
         s = Numeric.toBigInt(sRLP.getRLPData());
     } 
     
-    
-    
     public void setNonce(BigInteger nonce) {
     	this.nonce = nonce;
+    }
+    
+    public BigInteger getNonce() {
+    	return nonce;
     }
     
     public void setTo(byte[] recipient) {
     	this.to = recipient;
     }
     
+    public byte[] getTo() {
+    	return to;
+    }
+    
     public void setValue(BigInteger amount) {
     	this.value = amount;
     }
     
+    public BigInteger getValue() {
+    	return value;
+    }
+    
     public void setGas(BigInteger gasLimit) {
     	this.gas = gasLimit;
+    }
+    
+    public BigInteger getGas() {
+    	return gas;
     }
     
     public void setGasprice(byte[] price) {
@@ -105,56 +113,40 @@ public class RawTransactionData {
     	this.gasprice = Numeric.toBigInt(price);
     }
     
-    public void setInput(byte[] data) {
-    	this.input = data;
-    }
-    
-    public void setV(BigInteger v) {
-    	this.v = v;
-    }
-    
-    public void setR(BigInteger r) {
-    	this.r = r;
-    }
-    
-    public void setS(BigInteger s) {
-    	this.s = s;
-    }
-    
-    public byte[] getTo() {
-    	return to;
-    }
-    
-    public BigInteger getNonce() {
-    	return nonce;
-    }
-    
-    public BigInteger getValue() {
-    	return value;
-    }
-    
-    public BigInteger getGas() {
-    	return gas;
-    }
-    
     public BigInteger getGasprice() {
     	return gasprice;
+    }
+    
+    public void setInput(byte[] data) {
+    	this.input = data;
     }
     
     public byte[] getInput() {
     	return input;
     }
     
+    public void setV(BigInteger v) {
+    	this.v = v;
+    }
+    
     public BigInteger getV() {
     	return v;
+    }
+    
+    public void setR(BigInteger r) {
+    	this.r = r;
     }
     
     public BigInteger getR() {
     	return r;
     }
     
+    public void setS(BigInteger s) {
+    	this.s = s;
+    }
+    
     public BigInteger getS() {
     	return s;
     }
-
 }
+

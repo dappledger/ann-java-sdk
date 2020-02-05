@@ -7,9 +7,7 @@ import org.web3j.abi.datatypes.*;
 import org.web3j.abi.datatypes.generated.AbiTypes;
 import org.web3j.abi.datatypes.generated.Uint256;
 import org.web3j.crypto.Hash;
-
 import org.web3j.utils.Numeric;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
