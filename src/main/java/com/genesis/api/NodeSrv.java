@@ -685,6 +685,12 @@ public class NodeSrv {
     * @throws IOException
     */
    public SendTransactionResult sendPayloadTx(BigInteger nonce,String to, String payload, BigInteger value, PrivateKey privateKey) throws IOException {
+       if (payload.getBytes().length > 4096) {
+		   SendTransactionResult res = new SendTransactionResult();
+		   res.setErrMsg("payload length must be less than 4096");
+	       res.setTxHash("");
+	       return res;
+   	   }
 	   RawTransaction tx = TransactionUtil.createPayloadTransaction(nonce,to,payload,value);
 	   Signature sig = CryptoUtil.generateSignature(tx, privateKey);
 	   SendTransactionResult res = callPayloadWithSig(nonce,to, payload, value, sig, true);
@@ -692,6 +698,12 @@ public class NodeSrv {
    }
 
    public SendTransactionResult sendPayloadTxAsync(BigInteger nonce,String to,String payload, BigInteger value, PrivateKey privateKey) throws IOException {
+       if (payload.getBytes().length > 4096) {
+		   SendTransactionResult res = new SendTransactionResult();
+		   res.setErrMsg("payload length must be less than 4096");
+	       res.setTxHash("");
+	       return res;
+   	   }
 	   RawTransaction tx = TransactionUtil.createPayloadTransaction(nonce,to,payload,value);
 	   Signature sig = CryptoUtil.generateSignature(tx, privateKey);
 	   SendTransactionResult res = callPayloadWithSig(nonce,to, payload, value, sig, false);
