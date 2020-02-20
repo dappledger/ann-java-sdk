@@ -55,7 +55,7 @@ public class NodeApiTest {
 
     @BeforeClass
     public static void init() throws IOException{	
-        nodeSrv = new NodeSrv("http://localhost:46657");
+        nodeSrv = new NodeSrv("http://localhost:46677");
     }
     
     @Test
@@ -370,11 +370,18 @@ public class NodeApiTest {
     	int nonce = nodeSrv.queryPendingNonce(address);
         log.info("nonce {}" , nonce);
         
-        SendTransactionResult res  = nodeSrv.sendPayloadTx(BigInteger.valueOf(nonce), null, "payload2", BigInteger.valueOf(0), privKey);
+        SendTransactionResult res  = nodeSrv.sendPayloadTx(BigInteger.valueOf(nonce), null, "payload", BigInteger.valueOf(0), privKey);
         log.info("send payload sync res hash:"+ res.getTxHash() + ";error:"+ res.getErrMsg());
+        Thread.sleep(2000);
+        
+        int nonce2 = nodeSrv.queryPendingNonce(address);
+        SendTransactionResult res2  = nodeSrv.sendPayloadTxAsync(BigInteger.valueOf(nonce2), null, "payload2", BigInteger.valueOf(0), privKey);
+        log.info("send payload async res2 hash:"+ res2.getTxHash() + ";error:"+ res2.getErrMsg());
         Thread.sleep(2000);
         
         QueryTransactionPayload pay = nodeSrv.getPayloadWithHash(res.getTxHash());
         log.info("getpayload value:" + pay.getPayload()+ ";error:"+pay.getErrMsg());
+        QueryTransactionPayload pay2 = nodeSrv.getPayloadWithHash(res2.getTxHash());
+        log.info("getpayload value:" + pay2.getPayload()+ ";error:"+pay2.getErrMsg());
     }
 }
