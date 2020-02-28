@@ -1,5 +1,7 @@
 package com.genesis.api;
 
+import com.genesis.api.bean.exception.BaseException;
+import com.genesis.api.bean.exception.ErrCode;
 import com.genesis.api.crypto.PrivateKey;
 import com.genesis.api.crypto.Signature;
 import org.spongycastle.util.encoders.Hex;

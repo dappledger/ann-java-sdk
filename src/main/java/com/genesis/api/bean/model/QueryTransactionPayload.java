@@ -1,5 +1,7 @@
 package com.genesis.api.bean.model;
 
+import org.web3j.utils.Numeric;
+
 import lombok.Data;
 
 @Data
@@ -11,15 +13,22 @@ public class QueryTransactionPayload {
     	payload = hexToASCII(p);
     }
     
-    public String hexToASCII(String hexValue)
-	   {
-	       StringBuilder output = new StringBuilder("");
-	       for (int i = 0; i < hexValue.length(); i += 2)
-	       {
-	           String str = hexValue.substring(i, i + 2);
-	           output.append((char) Integer.parseInt(str, 16));
-	       }
-	       return output.toString();
-	   }
+    public String hexToASCII(String hexValue){
+    	byte[] baKeyword = new byte[hexValue.length() / 2];
+ 	    for (int i = 0; i < baKeyword.length; i++) {
+ 	    	try {
+ 	    		baKeyword[i] = (byte) (0xff & Integer.parseInt(hexValue.substring(
+ 	    				i * 2, i * 2 + 2), 16));
+ 	        } catch (Exception e) {
+ 	        	e.printStackTrace();
+ 	        }
+ 	    }
+ 	    try {
+ 	    	hexValue = new String(baKeyword, "utf-8");// UTF-16le:Not
+ 	    } catch (Exception e1) {
+ 	    	e1.printStackTrace();
+ 	    }
+ 	    return hexValue;
+    }
 }
 
