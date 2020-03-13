@@ -55,7 +55,7 @@ public class NodeApiTest {
 
     @BeforeClass
     public static void init() throws IOException{	
-        nodeSrv = new NodeSrv("http://localhost:46677");
+        nodeSrv = new NodeSrv("http://localhost:46657/");
     }
     
     @Test
