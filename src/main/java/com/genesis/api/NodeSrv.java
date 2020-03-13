@@ -169,11 +169,11 @@ public class NodeSrv {
         	}
         	      	
         	String[] txs = blockdata.getTxs();
-        	String[] extxs = blockdata.getTxs();
+        	String[] extxs = blockdata.getExtxs();
         	int base = txs.length;
         	int ex = extxs.length;
         	String[] hashs = new String[base+ex];
-        	for (int i = 0; i <txs.length; i++) {
+        	for (int i = 0; i < base; i++) {
         		byte[] txByte = Numeric.hexStringToByteArray(txs[i]);
         		byte[] txhash = Hash.sha3(txByte);
         		hashs[i] = Numeric.toHexString(txhash);
